@@ -1,3 +1,7 @@
+; ***************************************************************************************
+; ***************************************************************************************
+; ** Simple into function (display basic messages)
+; ** Require setup.asm
 
 .DATA
 memory_size         db 5 dup(0)
@@ -12,10 +16,7 @@ msg_dosver2         db 13, 10, "$"
 .CODE
 INTRO:
     ; simple welcome piece of code
-    ; Frankly not very well written but that's not critical
-    mov ax, @DATA
-    mov ds, ax
-    
+    ; Frankly not very well written but that's not critical   
     mov dx, offset msg_welcome
     mov ah, 9
     int 21h
