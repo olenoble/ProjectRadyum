@@ -4,13 +4,15 @@
 
 .DATA
 ERRORMSG_MEMRESIZE  db "Could not resize memory", 13, 10, "$"
-GOODBYE_MSG         db "Thanks for using Radyum", 13, 10, "$"
+GOODBYE_MSG         db 13, 10, 13, 10, "Thanks for using Radyum", 13, 10, "$"
 
 
 .CODE
 SETUP:
     ; Set up some basic stuff for the code at start
     ; i.e. freeing unnecessary memory
+    ; Should be called at start (otherwise stack size may not be estimated properly)
+    ; Registers are changed
     
     ; Resize the memory allocated to our program
     ; Subtract SS and ES (do not modify either!)
