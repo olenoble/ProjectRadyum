@@ -22,7 +22,7 @@ MAIN PROC
     mov di, offset FILEINFO
     call OPEN_FILE
     
-    ; Then print it out
+    ; Then print a little message
     mov dx, offset MSG_TEST
     mov ah, 9
     int 21h    
