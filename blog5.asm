@@ -87,11 +87,11 @@ find_body:
     jnz find_body
     
     ; Parse body data
-    mov si, offset PICT_SIZE
-    mov ax, [si]
-    mov bx, [si+2]
-    mul bx
-    mov bx, ax
+    add di, 2       ; looks like there is 2 empty bytes after BODY
+    mov si, offset FILEINFO
+    mov bx, [si+4]
+    ; add bx, di
+    mov dx, 0fe26h
     
     push ds
     push es
@@ -109,19 +109,20 @@ fill_data:
     and al, 80h
 
     jz less80h
-    
-    and cl, 7fh
-    jz end_filling
-    
+
+    neg cl
+    inc cl
     mov al, [si]
     rep stosb
-    sub bx, cx
-    jns fill_data
+    inc si
+    jmp test_pos
     
 less80h:
+    inc cl
     rep movsb
-    sub bx, cx
-    jns fill_data
+test_pos:
+    cmp bx, si
+    ja fill_data
 
 end_filling:
     push ds
@@ -136,15 +137,31 @@ end_filling:
     
     call READ_KEY_WAIT
     
+    mov ax, 0013h
+    int 10h
+    
+    mov ax, 0a000h
+    mov es, ax
+    mov di, 0
+    
+    mov si, offset BODY_BUFFER
+    mov cx, 320 * 200
+    rep movsb
+    
+    call READ_KEY_WAIT
+    
+    
     ; remember to free up the requested memory
+    mov di, offset FILEINFO
     mov ax, [di+6]
     mov es, ax
     mov ah, 49h
     int 21h
     
     call INT9_RESET
-    jmp ENDPROG
-
+    call RESET_SCREEN
+    jmp ENDPROG 
+    
 MAIN ENDP
 
     ; **********************************************
