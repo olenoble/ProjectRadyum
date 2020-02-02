@@ -87,7 +87,7 @@ find_body:
     jnz find_body
     
     ; Parse body data
-    add di, 2       ; looks like there is 2 empty bytes after BODY
+    add di, 4       ; looks like there is 4 empty bytes after BODY
     mov si, offset FILEINFO
     mov bx, [si+4]
     ; add bx, di
