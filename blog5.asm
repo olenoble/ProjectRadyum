@@ -5,7 +5,7 @@
 .STACK 4096
 
 .DATA
-FILENAME    db "C:\IMG_TEST.LBM", 0
+FILENAME    db "C:\IMGTEST.LBM", 0
 FILEINFO    dw 4 dup (0)
 
 MSG_TEST    db 13, 10, "Press Any Key...", "$"
@@ -65,6 +65,7 @@ find_cmap:
     
     mov si, offset CMAP_BUFFER
     xchg si, di
+    add si, 4
     mov cx, 256 * 3
     rep movsb
     
@@ -90,7 +91,6 @@ find_body:
     add di, 4       ; looks like there is 4 empty bytes after BODY
     mov si, offset FILEINFO
     mov bx, [si+4]
-    ; add bx, di
     mov dx, 0fe26h
     
     push ds
@@ -140,6 +140,16 @@ end_filling:
     mov ax, 0013h
     int 10h
     
+    mov dx, 03dah
+WaitNotVSync2:                              ;wait to be out of vertical sync
+    in al, dx
+    and al, 08h
+    jnz WaitNotVSync2
+WaitVSync2:                                 ;wait until vertical sync begins
+    in al, dx
+    and al, 08h
+    jz WaitVSync2
+    
     mov ax, 0a000h
     mov es, ax
     mov di, 0
@@ -148,6 +158,30 @@ end_filling:
     mov cx, 320 * 200
     rep movsb
     
+    call fade_in
+    jmp wait4Key
+    
+    ; now set colors 
+    mov cx, 255 * 3
+    mov si, offset CMAP_BUFFER       ;load the DAC from this array
+    
+    mov dx, 03c8h
+    xor al, al
+    out dx, al
+    
+    mov dx, 03c9h
+    cli
+DACLoadLoop:
+    ; set the red/green/blue component
+    lodsb
+    and al, 1111b
+    shl al, 2
+    out dx, al
+
+    loop DACLoadLoop
+    sti
+
+wait4Key:    
     call READ_KEY_WAIT
     
     
@@ -163,6 +197,55 @@ end_filling:
     jmp ENDPROG 
     
 MAIN ENDP
+
+
+fade_in:
+
+    mov bl, 1111b
+    mov ah, 0
+iterfade:    
+    ; now set colors 
+    mov cx, 255 * 3
+    mov si, offset CMAP_BUFFER       ;load the DAC from this array
+    
+    mov dx, 03c8h
+    xor al, al
+    out dx, al
+    
+    mov dx, 03c9h
+    cli
+DACLoadLoop2:
+    ; set the red/green/blue component
+    lodsb
+    and al, 1111b
+    cmp al, ah
+    jb use_al
+    mov al, ah
+use_al:    
+    shl al, 2
+    out dx, al
+
+    loop DACLoadLoop2
+    sti
+    
+    mov cx, 7
+wait_several_scan:    
+    mov dx, 03dah
+WaitNotVSync3:                              ;wait to be out of vertical sync
+    in al, dx
+    and al, 08h
+    jnz WaitNotVSync3
+WaitVSync3:                                 ;wait until vertical sync begins
+    in al, dx
+    and al, 08h
+    jz WaitVSync3
+    loop wait_several_scan
+    
+    inc ah
+    dec bl
+    jnz iterfade
+    
+    ret
 
     ; **********************************************
     ; **********************************************
