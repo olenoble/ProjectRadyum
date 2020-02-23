@@ -162,7 +162,7 @@ WaitVSync2:                                 ;wait until vertical sync begins
     jmp wait4Key
     
     ; now set colors 
-    mov cx, 255 * 3
+    mov cx, 256 * 3
     mov si, offset CMAP_BUFFER       ;load the DAC from this array
     
     mov dx, 03c8h
@@ -205,7 +205,7 @@ fade_in:
     mov ah, 0
 iterfade:    
     ; now set colors 
-    mov cx, 255 * 3
+    mov cx, 256 * 3
     mov si, offset CMAP_BUFFER       ;load the DAC from this array
     
     mov dx, 03c8h
@@ -228,8 +228,8 @@ use_al:
     loop DACLoadLoop2
     sti
     
-    mov cx, 12
-wait_several_scan:    
+    mov cx, 5
+wait_several_scan:
     mov dx, 03dah
 WaitNotVSync3:                              ;wait to be out of vertical sync
     in al, dx
