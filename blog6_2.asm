@@ -8,9 +8,9 @@
 ;   2. black out / fade in / fade out / change palette
 ;   3. create and manage a video buffer to copy data to A000
 ;   4. detect vertical sync
-; B. in lbmtool --> allocate memory for decompressed file (don't use pre-defined segment)
-; C. Main file need to track number of segment allocated for images/files
-; D. Main file need to allow for several palette
+; B. in grafx --> allocate memory for decompressed file (don't use pre-defined segment) and pass segment to lbmtool
+; C. grafx file need to track number of segment allocated for images/files
+; D. grafx file need to allow for several palette
 
 .STACK 4096
 
@@ -154,6 +154,7 @@ WaitVSync3:                                 ;wait until vertical sync begins
     INCLUDE filemgmt.asm
     INCLUDE keyb.asm
     INCLUDE lbmtool.asm
+    ; INCLUDE grafx.asm
     
 END MAIN
 

@@ -7,10 +7,10 @@
 .DATA
 PICT_SIZE   dw 2 dup (0)
 CMAP_REF    db "CMAP"
-CMAP_BUFFER db 3 * 256 dup (0)
-
 BODY_REF    db "BODY"
-BODY_BUFFER db 320*200 dup (0)
+
+CMAP_BUFFER db 3 * 256 dup (0)
+BODY_BUFFER db 320 * 200 dup (0)
 
 .CODE
 
