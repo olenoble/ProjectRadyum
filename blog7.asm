@@ -4,12 +4,9 @@
 
 ; TO DO
 ; A. move the following function into a grafx lib:
-;   1. change screen to 320x200 mode
 ;   2. black out / fade in / fade out / change palette
 ;   3. create and manage a video buffer to copy data to A000
 ;   4. detect vertical sync
-; B. in grafx --> allocate memory for decompressed file (don't use pre-defined segment) and pass segment to lbmtool
-; C. grafx file need to track number of segment allocated for images/files
 
 
 .STACK 4096
@@ -35,7 +32,7 @@ MAIN PROC
     
     ; decompress the LBM file
     mov si, offset FILEINFO
-    call READ_LBM
+    call EXTRACT_IMG
     
     ; Then print a little message
     mov dx, offset MSG_TEST
@@ -43,9 +40,7 @@ MAIN PROC
     int 21h
     
     call READ_KEY_WAIT
-    
-    mov ax, 0013h
-    int 10h
+    call SWITCH_TO_320x200
     
     mov dx, 03dah
 WaitNotVSync2:                              ;wait to be out of vertical sync
@@ -56,6 +51,7 @@ WaitVSync2:                                 ;wait until vertical sync begins
     in al, dx
     and al, 08h
     jz WaitVSync2
+    DETECT_VSYNC
     
     mov ax, 0a000h
     mov es, ax
@@ -65,7 +61,6 @@ WaitVSync2:                                 ;wait until vertical sync begins
     mov ax, [IMG_PTR]
     mov ds, ax
     xor si, si
-    ; mov si, offset BODY_BUFFER
     mov cx, 320 * 200
     rep movsb
     pop ds
