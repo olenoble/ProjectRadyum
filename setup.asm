@@ -37,12 +37,14 @@ SETUP:
     mov ds, ax
     
     ret
-    
+
+
 RESET_SCREEN:
     ; go back to text mode - this function modifies AX
     mov ax, 0003h
     int 10h
     ret
+
 
 ENDPROG:
     ; This is simply the end of program
@@ -59,7 +61,6 @@ ENDPROG:
 ; ********************************************************************************************
 ; ********************************************************************************************
 ; ** Various functions
-    
 CantResizeMemory:
     call RESET_SCREEN
     ; This routine is called if DOS can't resize the program memory
