@@ -51,6 +51,7 @@ OPEN_FILE:
     int 21h
     
     jc CantAllocateMemory
+    call MemoryStillAvail  ; 410c --> ~266
     mov [di+6], ax
         
     ; Remember we need to get back to the beginning of the file
@@ -87,6 +88,42 @@ OPEN_FILE:
 ; ********************************************************************************************
 ; ********************************************************************************************
 ; ** Various functions
+; Function to call to check how much memory is still available
+MemoryStillAvail:
+    pusha
+    push ds
+    
+    mov ax, @DATA
+    mov ds, ax
+    
+    mov bx, 0ffffh
+    mov ah, 48h
+    int 21h
+    
+    mov ax, bx
+    shr ax, 6
+    
+    ; convert it to ASCII
+    mov di, offset memory_size
+    call convert_ax_ascii
+    
+    ; Then print it out
+    mov dx, offset msg_memsize
+    mov ah, 9
+    int 21h
+    
+    mov si, offset memory_size
+    mov cx, 5
+    call print_ascii
+    
+    mov dx, offset msg_memsize2
+    mov ah, 9
+    int 21h
+
+    pop ds
+    popa
+    ret
+    
 ; list of error functions
 CantOpen:
     ; This routine is called if DOS can't access the file
@@ -113,5 +150,7 @@ FileErrorMsgAndQuit:
     call RESET_SCREEN
     mov ah, 9
     int 21h
+    
+    call INT9_RESET
     
     jmp ENDPROG
