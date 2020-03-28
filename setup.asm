@@ -21,11 +21,11 @@ SETUP:
     sub bx, ax
     
     ; Find the end of the stack and shift 4bits to the rights
-    ; Also add 2 to be safe
+    ; Also add 1 to be safe
     mov ax, sp
-    add ax, 0fh
+    add ax, 0fh     ; that's to make sure we can round up
     shr ax, 4
-    ; inc ax
+    inc ax
     
     ; now add both and adjust
     add bx, ax

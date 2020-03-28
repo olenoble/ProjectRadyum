@@ -22,7 +22,6 @@ OPEN_FILE:
     pusha
     
     ; Open file
-    ;mov dx, offset FILENAME
     mov ax, 3d00h
     int 21h
     
@@ -51,7 +50,7 @@ OPEN_FILE:
     int 21h
     
     jc CantAllocateMemory
-    call MemoryStillAvail  ; 410c --> ~266
+    call MemoryStillAvail
     mov [di+6], ax
         
     ; Remember we need to get back to the beginning of the file
@@ -95,6 +94,11 @@ MemoryStillAvail:
     
     mov ax, @DATA
     mov ds, ax
+
+    ; clear the string first before writing down the size
+    mov di, offset memory_size
+    mov cx, 5
+    call clear_ascii
     
     mov bx, 0ffffh
     mov ah, 48h
@@ -122,6 +126,27 @@ MemoryStillAvail:
 
     pop ds
     popa
+    ret
+
+clear_ascii:
+    ; CX = size of string
+    ; DI = address of the string to clear
+    
+    push di
+    push cx
+    push ax
+    push es
+
+    push ds
+    pop es
+    xor ax, ax
+    rep stosb
+
+    pop es
+    pop ax
+    pop cx
+    pop di
+
     ret
     
 ; list of error functions

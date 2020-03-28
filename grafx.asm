@@ -21,17 +21,17 @@ DETECT_VSYNC MACRO
     local @@WaitNotVSyncMACRO, @@WaitVSyncMACRO
     ; Detect vsync - will modify ax and dx
     mov dx, 03dah
-@@WaitNotVSyncMACRO:
-    ;wait to be out of vertical sync
-    in al, dx
-    and al, 08h
-    jnz @@WaitNotVSyncMACRO
+    @@WaitNotVSyncMACRO:
+        ;wait to be out of vertical sync
+        in al, dx
+        and al, 08h
+        jnz @@WaitNotVSyncMACRO
 
-@@WaitVSyncMACRO:
-    ;wait until vertical sync begins
-    in al, dx
-    and al, 08h
-    jz @@WaitVSyncMACRO
+    @@WaitVSyncMACRO:
+        ;wait until vertical sync begins
+        in al, dx
+        and al, 08h
+        jz @@WaitVSyncMACRO
 ENDM
 
 
@@ -43,13 +43,13 @@ POINT_TO_PALETTE MACRO
     mov cl, al
     mov bx, 300h
     xor ch, ch
-    ;xor ax, ax
+
     mov ax, offset COLORMAPS
     inc cx
-@@PaletteShiftPos:
-    add ax, bx
-    dec cx
-    jnz @@PaletteShiftPos
+    @@PaletteShiftPos:
+        add ax, bx
+        dec cx
+        jnz @@PaletteShiftPos
     sub ax, bx
 ENDM
     
@@ -134,26 +134,25 @@ FREE_ALL_IMG_MEMORY:
     push si
     
     mov cx, MAX_LBM_FILES
-    ; inc cx
     
     mov al, 0
     mov si, offset SCREEN_PTR
     
-ImgMemFreeLoop:
-    mov ax, [si]
-    or ax, ax
-    jz ImgNothingToFree
-    
-    mov es, ax
-    mov ah, 49h
-    int 21h
-    
-    ; now set the segment to 0
-    mov word ptr [si], 0
-ImgNothingToFree:    
-    add si, 2
-    dec cx
-    jnz ImgMemFreeLoop
+    @@ImgMemFreeLoop:
+        mov ax, [si]
+        or ax, ax
+        jz @@ImgNothingToFree
+        
+        mov es, ax
+        mov ah, 49h
+        int 21h
+        
+        ; now set the segment to 0
+        mov word ptr [si], 0
+        @@ImgNothingToFree:    
+            add si, 2
+            dec cx
+            jnz @@ImgMemFreeLoop
     
     pop si
     pop cx
@@ -216,12 +215,12 @@ EXTRACT_IMG:
     xor ch, ch
     xor ax, ax
     inc cx
-shift_pos:    
-    add ax, bx
-    dec cx
-    jnz shift_pos
-    sub ax, bx
+    @@shift_pos:    
+        add ax, bx
+        dec cx
+        jnz @@shift_pos
     
+    sub ax, bx
     add di, ax
     mov cx, bx
     rep movsb
@@ -253,14 +252,14 @@ SET_PALETTE:
     mov dx, 03c9h
     cli
     cld
-set_palette_loop:
-    ; set the red/green/blue component
-    lodsb
-    and al, 1111b
-    shl al, 2
-    out dx, al
+    @@set_palette_loop:
+        ; set the red/green/blue component
+        lodsb
+        and al, 1111b
+        shl al, 2
+        out dx, al
+        loop @@set_palette_loop
 
-    loop set_palette_loop
     sti
     popa
     ret
@@ -277,11 +276,11 @@ BLACKOUT:
     
     mov dx, 03c9h
     cli
-BlackOutLoop:
-    mov al, 0
-    out dx, al
+    @@BlackOutLoop:
+        mov al, 0
+        out dx, al
+        loop @@BlackOutLoop
 
-    loop BlackOutLoop
     sti
     ret
     
@@ -299,45 +298,46 @@ FADEOUT:
     ; we start at ah = 1111b
     mov bl, 1111b
     mov ah, bl
-FadeOutIterate:    
-    ; now set colors 
-    mov cx, 256 * 3
-    
-    ; get the offset back
-    mov si, di
-      
-    mov dx, 03c8h
-    xor al, al
-    out dx, al
-    
-    mov dx, 03c9h
-    cli
-FadeOutColorLoop:
-    ; set the red/green/blue component
-    lodsb
-    and al, 1111b
-    ; if greater than ah, use ah - otherwise use rgb
-    ; this is effectively min(rgb, ah)
-    cmp al, ah
-    jb use_al_fadeout
-    mov al, ah
-use_al_fadeout:    
-    shl al, 2
-    out dx, al
+    @@FadeOutIterate:
+        ; now set colors 
+        mov cx, 256 * 3
+        
+        ; get the offset back
+        mov si, di
+        
+        mov dx, 03c8h
+        xor al, al
+        out dx, al
+        
+        mov dx, 03c9h
+        cli
+        @@FadeOutColorLoop:
+            ; set the red/green/blue component
+            lodsb
+            and al, 1111b
+            ; if greater than ah, use ah - otherwise use rgb
+            ; this is effectively min(rgb, ah)
+            cmp al, ah
+            jb @@use_al_fadeout
+            mov al, ah
+        @@use_al_fadeout:    
+            shl al, 2
+            out dx, al
 
-    loop FadeOutColorLoop
-    sti
-    
-    ; then we wait a few iteration of the Vsync scan
-    ; so it doesn't go too fast
-    mov cx, [FADEWAITITR]
-FadeOutMultipleScan:
-    DETECT_VSYNC
-    loop FadeOutMultipleScan
-    
-    dec ah
-    dec bl
-    jnz FadeOutIterate
+            loop @@FadeOutColorLoop
+
+        sti
+        
+        ; then we wait a few iteration of the Vsync scan
+        ; so it doesn't go too fast
+        mov cx, [FADEWAITITR]
+        @@FadeOutMultipleScan:
+            DETECT_VSYNC
+            loop @@FadeOutMultipleScan
+        
+        dec ah
+        dec bl
+        jnz @@FadeOutIterate
     
     popa
     ret
@@ -356,45 +356,46 @@ FADEIN:
     ; we start at ah = 0
     mov bl, 1111b
     mov ah, 0
-FadeInIterate:    
-    ; now set colors 
-    mov cx, 256 * 3
-    
-    ; get the offset back
-    mov si, di
-      
-    mov dx, 03c8h
-    xor al, al
-    out dx, al
-    
-    mov dx, 03c9h
-    cli
-FadeInColorLoop:
-    ; set the red/green/blue component
-    lodsb
-    and al, 1111b
-    ; if greater than ah, use ah - otherwise use rgb
-    ; this is effectively min(rgb, ah)
-    cmp al, ah
-    jb use_al_fadein
-    mov al, ah
-use_al_fadein:    
-    shl al, 2
-    out dx, al
+    @@FadeInIterate:
+        ; now set colors 
+        mov cx, 256 * 3
+        
+        ; get the offset back
+        mov si, di
+        
+        mov dx, 03c8h
+        xor al, al
+        out dx, al
+        
+        mov dx, 03c9h
+        cli
+        @@FadeInColorLoop:
+            ; set the red/green/blue component
+            lodsb
+            and al, 1111b
+            ; if greater than ah, use ah - otherwise use rgb
+            ; this is effectively min(rgb, ah)
+            cmp al, ah
+            jb @@use_al_fadein
+            mov al, ah
+        @@use_al_fadein:    
+            shl al, 2
+            out dx, al
 
-    loop FadeInColorLoop
-    sti
-    
-    ; then we wait a few iteration of the Vsync scan
-    ; so it doesn't go too fast
-    mov cx, [FADEWAITITR]
-FadeInMultipleScan:
-    DETECT_VSYNC
-    loop FadeInMultipleScan
-    
-    inc ah
-    dec bl
-    jnz FadeInIterate
+            loop @@FadeInColorLoop
+
+        sti
+        
+        ; then we wait a few iteration of the Vsync scan
+        ; so it doesn't go too fast
+        mov cx, [FADEWAITITR]
+        @@FadeInMultipleScan:
+            DETECT_VSYNC
+            loop @@FadeInMultipleScan
+        
+        inc ah
+        dec bl
+        jnz @@FadeInIterate
     
     popa
     ret

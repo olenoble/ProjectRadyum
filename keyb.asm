@@ -64,10 +64,10 @@ READ_KEY_WAIT:
     push bx
     
     lea si, [KEY_BUFFER]
-wait_key:
-    mov bx, [KEY_BUFFER_PTR]
-    or bx, bx
-    jz wait_key
+    @@wait_key:
+        mov bx, [KEY_BUFFER_PTR]
+        or bx, bx
+        jz @@wait_key
     
     ; adjust the buffer
     dec bx
@@ -93,14 +93,14 @@ READ_KEY_NOWAIT:
     lea si, [KEY_BUFFER]
     mov bx, [KEY_BUFFER_PTR]
     or bx, bx
-    jz return_no_key
+    jz @@return_no_key
     
     ; adjust the buffer
     dec bx
-    mov [KEY_BUFFER_PTR], bx    
+    mov [KEY_BUFFER_PTR], bx
     mov al, [si+bx]
 
-return_no_key:    
+@@return_no_key:   
     pop bx
     pop si
     ret
@@ -130,20 +130,20 @@ BespokeInt9:
     
     ; is it an up key (which we don't care about)
     and ah, 80h
-    jnz end_int9
+    jnz @@end_int9
 
     ; si points to buffer and dx is the current position
     lea si, [KEY_BUFFER]
     mov bx, [KEY_BUFFER_PTR]
     ; if overflow then don't bother storing it
     inc bx
-    jz end_int9
+    jz @@end_int9
     
     mov [KEY_BUFFER_PTR], bx
     dec bx
     mov [si+bx], al
     
-end_int9:
+@@end_int9:
     mov al, 20h
     out 20h, al
     
@@ -153,4 +153,3 @@ end_int9:
     pop ax
     sti
     iret
-    

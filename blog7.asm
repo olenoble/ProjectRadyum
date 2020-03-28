@@ -5,9 +5,9 @@
 .STACK 4096
 
 .DATA
-FILENAME    db "C:\IMGTEST.LBM", 0
-;FILENAME    db "C:\IMG_TEST.LBM", 0
-;FILENAME    db "C:\IMG5_VGA.LBM", 0
+FILENAME    db ".\IMGTEST.LBM", 0
+;FILENAME    db ".IMG_TEST.LBM", 0
+;FILENAME    db ".IMG5_VGA.LBM", 0
 FILEINFO    dw 4 dup (0)
 
 MSG_WAITKEY db 13, 10, "Press Any Key...", "$"

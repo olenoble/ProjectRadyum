@@ -105,14 +105,14 @@ convert_ax_ascii:
     mov bx, 10
     ; The algo is about dividing by 10 the output
     ; and convert the remainder to ASCII
-decimal_conv:
-    xor dx, dx
-    div bx
-    add dl, 30h
-    mov [di], dl
-    inc di
-    or ax, ax
-    jnz decimal_conv
+    @@decimal_conv:
+        xor dx, dx
+        div bx
+        add dl, 30h
+        mov [di], dl
+        inc di
+        or ax, ax
+        jnz @@decimal_conv
     
     pop di
     pop dx
@@ -130,14 +130,14 @@ convert_al_ascii:
     push ax
     push di
     
-decimal_al_conv:
-    aam
-    add al, 30h
-    mov [di], al
-    inc di
-    mov al, ah
-    or al, al
-    jnz decimal_al_conv
+    @@decimal_al_conv:
+        aam
+        add al, 30h
+        mov [di], al
+        inc di
+        mov al, ah
+        or al, al
+        jnz @@decimal_al_conv
     
     pop di
     pop ax
@@ -157,15 +157,15 @@ print_ascii:
     dec si
 
     mov ah, 02h
-print_check:
-    mov dl, [si]
-    or dl, dl
-    jz noprint  ; do not print if you find 0
-    int 21h
-noprint:    
-    dec si
-    dec cx
-    jnz print_check
+    @@print_check:
+        mov dl, [si]
+        or dl, dl
+        jz @@noprint  ; do not print if you find 0
+        int 21h
+    @@noprint:    
+        dec si
+        dec cx
+        jnz @@print_check
     
     pop dx
     pop ax
