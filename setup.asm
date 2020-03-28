@@ -23,8 +23,9 @@ SETUP:
     ; Find the end of the stack and shift 4bits to the rights
     ; Also add 2 to be safe
     mov ax, sp
+    add ax, 0fh
     shr ax, 4
-    inc ax
+    ; inc ax
     
     ; now add both and adjust
     add bx, ax
@@ -54,6 +55,8 @@ ENDPROG:
     mov ah, 09h
     int 21h
     
+    call MemoryStillAvail
+    
     mov ah, 4ch
     int 21h
 
@@ -70,4 +73,5 @@ CantResizeMemory:
     mov dx, offset ERRORMSG_MEMRESIZE
     mov ah, 9
     int 21h
-    jmp ENDPROG  
+    
+    jmp ENDPROG

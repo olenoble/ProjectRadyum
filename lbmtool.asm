@@ -23,16 +23,17 @@ READ_LBM:
 
     pusha
     
-    ; Save SI for later
+    ; Save SI for later (till the very end of that routine)
     push si
     
     ; ****************************************************
-    ; ** Important, we now allocate the 64kb for the image
+    ; ** Important, we now allocate the 64kb for the image  
     mov bx, 0fa0h
     mov ah, 48h
     int 21h
     
-    jc CantAllocateMemoryForImage 
+    jc CantAllocateMemoryForImage
+    call MemoryStillAvail
     mov [IMG_PTR], ax
     
     ; ****************************************************
@@ -155,11 +156,12 @@ end_filling:
     ; remember to free up the original file memory
     ; move si to di (last pop)
     pop di
-    mov ax, [di+6]
-    mov es, ax
-    mov ah, 49h
-    int 21h
-
+    ;mov ax, [di+6]
+    ;mov es, ax
+    ;mov ah, 49h
+    ;int 21h
+    ;call MemoryStillAvail
+    
     popa
     ret 
     
@@ -176,5 +178,7 @@ LBM_FileErrorMsgAndQuit:
     call RESET_SCREEN
     mov ah, 9
     int 21h
+    
+    call INT9_RESET
     
     jmp ENDPROG

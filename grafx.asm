@@ -58,8 +58,8 @@ ENDM
 ; ** real code is here
 .CODE
 SET_UP_GRAPHIC_MODE:
-    call SWITCH_TO_320x200
     call CREATE_VIDEOBUFFER
+    call SWITCH_TO_320x200    
     ret
     
     
@@ -71,7 +71,8 @@ SWITCH_TO_320x200:
     ret
     
     
-CREATE_VIDEOBUFFER:
+CREATE_VIDEOBUFFER:    
+    
     ; code to create the second screen buffer
     ; automatically allocate 64kb
     ; ax and bx are modified
@@ -81,6 +82,10 @@ CREATE_VIDEOBUFFER:
     
     jc CantAllocateMemoryForBuffer
     mov [VIDEO_BUFFER], ax
+    
+    call MemoryStillAvail
+    call READ_KEY_WAIT
+    
     ret
 
 
@@ -398,7 +403,7 @@ FadeInMultipleScan:
 ; ********************************************************************************************
 ; ********************************************************************************************
 ; ** Various functions
-CantAllocateMemoryForBuffer:
+CantAllocateMemoryForBuffer:    
     ; This routine is called if DOS can't allocate the requested memory
     mov dx, offset ERR_BUFFER
     jmp Grafx_FileErrorMsgAndQuit
@@ -408,5 +413,10 @@ Grafx_FileErrorMsgAndQuit:
     call RESET_SCREEN
     mov ah, 9
     int 21h
+    
+    call MemoryStillAvail
+    call FREE_ALL_IMG_MEMORY
+    
+    call INT9_RESET
     
     jmp ENDPROG

@@ -1,19 +1,22 @@
-.MODEL LARGE
-.STACK 100H
+.MODEL SMALL
 .386
-
-; TO DO
-; A. move the following function into a grafx lib:
-;   2. fade out
 
 
 .STACK 4096
 
 .DATA
 FILENAME    db "C:\IMGTEST.LBM", 0
+;FILENAME    db "C:\IMG_TEST.LBM", 0
+;FILENAME    db "C:\IMG5_VGA.LBM", 0
 FILEINFO    dw 4 dup (0)
 
-MSG_TEST    db 13, 10, "Press Any Key...", "$"
+MSG_WAITKEY db 13, 10, "Press Any Key...", "$"
+
+MSG1        db "Loading LBM file", 13, 10, "$"
+MSG2        db "Extract image", 13, 10, "$"
+MSG3        db "Free LBM file", 13, 10, "$"
+MSG4        db "Allocate video buffer", 13, 10, "$"
+
 
 ; **********************************************
 ; **********************************************
@@ -36,23 +39,57 @@ MAIN PROC
     call INT9_SETUP
     call INTRO
 
+    ; **** debug message
+    mov dx, offset MSG1
+    mov ah, 9
+    int 21h
+
     ; open the file
     mov dx, offset FILENAME
     mov di, offset FILEINFO
     call OPEN_FILE
     
+    ; **** debug message
+    mov dx, offset MSG2
+    mov ah, 9
+    int 21h
+    
     ; decompress the LBM file
     mov si, offset FILEINFO
     call EXTRACT_IMG
     
+     ; **** debug message
+     mov dx, offset MSG3
+     mov ah, 9
+     int 21h   
+    
+    ;;;;; *** TEST
+    mov di, offset FILEINFO
+    mov ax, [di+6]
+    mov es, ax
+    mov ah, 49h
+    int 21h
+
+
+    call MemoryStillAvail
+    ;;;;; *** TEST
+    
     ; Then print a little message
-    mov dx, offset MSG_TEST
+    mov dx, offset MSG_WAITKEY
     mov ah, 9
     int 21h
     
     call READ_KEY_WAIT
-    call SET_UP_GRAPHIC_MODE
+
+    ; **** debug message
+    mov dx, offset MSG4
+    mov ah, 9
+    int 21h
     
+    call CREATE_VIDEOBUFFER
+    ; call SET_UP_GRAPHIC_MODE
+    jmp TEMPEND
+
     DETECT_VSYNC
     
     ; Now move the image to the buffer
@@ -74,11 +111,11 @@ MAIN PROC
     call FADEIN
     call READ_KEY_WAIT
     
-    ; and fadeout - but let's have a slower one
-    mov word ptr [FADEWAITITR], 16
+    ; and fadeout - but let's have a faster one
+    mov word ptr [FADEWAITITR], 2
     xor ax, ax
     call FADEOUT
-    
+TEMPEND:
     jmp END_GAME
 
     
@@ -96,7 +133,7 @@ END_GAME:
     call INT9_RESET
     
     ; reset the screen and quit
-    call RESET_SCREEN
+    ; call RESET_SCREEN
     jmp ENDPROG 
     
 END MAIN

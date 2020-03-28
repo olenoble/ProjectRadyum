@@ -23,7 +23,16 @@ INTRO:
     
     ; call int 12h to check how much memory we've got
     ; ax will contain the memory size
-    int 12h
+    ; int 12h
+    
+    ; int 12h is not super accurate (it just gives the max amount of potentially free memory)
+    ; Better solution is to use 48h / int 21h and request the max - which is bound to fail with DOSBOX
+    ; bx will return the largest amount of 16bytes pages that can be requested
+    mov bx, 0ffffh
+    mov ah, 48h
+    int 21h
+    mov ax, bx
+    shr ax, 6
     
     ; convert it to ASCII
     mov di, offset memory_size
@@ -111,7 +120,7 @@ decimal_conv:
     pop ax
     ret 
 
-    
+
 ; Similar function but for AL (8bits) - a lot easier
 convert_al_ascii:
     ; AL = number to convert
