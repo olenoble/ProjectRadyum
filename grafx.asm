@@ -3,7 +3,7 @@
 ; ** Graphics tools
 ; ** Require setup.asm & lbmtool.asm
 
-MAX_LBM_FILES   equ 5
+MAX_LBM_FILES   equ 3
 
 .DATA
 ; We can allow up to 10 color maps (limit completely arbitrary - about 4kb)
@@ -52,115 +52,46 @@ POINT_TO_PALETTE MACRO
         jnz @@PaletteShiftPos
     sub ax, bx
 ENDM
-    
+
 
 ; ************************************************************************************
 ; ** real code is here
-.CODE
-SET_UP_GRAPHIC_MODE:
-    call CREATE_VIDEOBUFFER
-    call SWITCH_TO_320x200    
-    ret
-    
-    
+.CODE  
 SWITCH_TO_320x200:
     ; pretty explicit
     ; ax is modified
     mov ax, 0013h
     int 10h
     ret
-    
-    
-CREATE_VIDEOBUFFER:    
-    
-    ; code to create the second screen buffer
-    ; automatically allocate 64kb
-    ; ax and bx are modified
-    mov bx, 0fa0h
-    mov ah, 48h
-    int 21h
-    
-    jc CantAllocateMemoryForBuffer
-    mov [VIDEO_BUFFER], ax
-    
-    call MemoryStillAvail
-    call READ_KEY_WAIT
-    
-    ret
 
 
-FREE_VIDEOBUFFER:
-    ; free the video buffer - to be called at the end
-    ; ax and es are modified
-    mov ax, [VIDEO_BUFFER]
-    mov es, ax
-    mov ah, 49h
-    int 21h
-    ret
-    
-
-FREE_SEGMENT_IMG:
-    ; code to free the memory allocated to an image
-    ; AL is the number of the image
-    push si
-    mov si, offset SCREEN_PTR
-    
-    ; we need to add the position of the desired image
-    ; remember we use words so we add 2 for each count
-    xor ah, ah
-    shl al, 1
-    add si, ax
-    
-    mov ax, [si]
-    or ax, ax
-    jz AlreadyFreedMemory
-    
-    mov es, ax
-    mov ah, 49h
-    int 21h
-    
-    ; now set the segment to 0
-    mov word ptr [si], 0
-    
-AlreadyFreedMemory:
-    pop si
-    ret
-
-
-FREE_ALL_IMG_MEMORY:
-    ; loop over SCREEN_PTR and free all memory
-    push ax
+ALLOCATE_IMG_PTR:
+    ; preset the position of the 320x200 img to store
+    ; as well as the video buffer
+    ; bx is input to the start of the memory zone
+    ; return bx to the end of the memory zone
     push cx
     push si
-    
+
+    ;mov bx, [DATA_PTR]
     mov cx, MAX_LBM_FILES
-    
-    mov al, 0
     mov si, offset SCREEN_PTR
+
+    @@LoopImgPtr:
+        mov [si], bx
+        add si, 2
+        add bx, 0fa0h ;0fffh
+        dec cx
+        jnz @@LoopImgPtr
     
-    @@ImgMemFreeLoop:
-        mov ax, [si]
-        or ax, ax
-        jz @@ImgNothingToFree
-        
-        mov es, ax
-        mov ah, 49h
-        int 21h
-        
-        ; now set the segment to 0
-        mov word ptr [si], 0
-        @@ImgNothingToFree:    
-            add si, 2
-            dec cx
-            jnz @@ImgMemFreeLoop
-    
+    mov [VIDEO_BUFFER], bx
+    add bx, 0fa0h
+
     pop si
     pop cx
-    pop ax
     ret
 
-
-    
+   
 COPY_TO_VIDEOBUFFER:
     ; copy the contents of the video buffer over to the video memory
     pusha
@@ -187,13 +118,21 @@ EXTRACT_IMG:
     ; call lbmtool to decompress a LBM file.
     ; SI must point to the file info with the format:
     ; FILEHANDLE (1w) + FILESIZE (2w - big endian) + FILESEGMENT (1w)
-    ; IMG_PTR points to the data segment for the image (to get back and store in SCREEN_PTR)
+    ; IMG_PTR points to the data segment for the image (need to populate it from already allocated segments)
     ; the colormap in lbmtool also need to be copied over in the right location in COLORMAPS
-    
-    call READ_LBM
-    
+
     pusha
-       
+
+    mov di, offset SCREEN_PTR
+    mov al, [IMG_COUNTER]
+    shl al, 1           ; we use words so pointer needs to be multiplied by 2
+    xor ah, ah
+    add di, ax
+    mov ax, [di]
+    mov [IMG_PTR], ax
+
+    call READ_LBM
+
     ; save pointer to buffer
     mov si, offset SCREEN_PTR
     mov al, [IMG_COUNTER]
@@ -404,11 +343,6 @@ FADEIN:
 ; ********************************************************************************************
 ; ********************************************************************************************
 ; ** Various functions
-CantAllocateMemoryForBuffer:    
-    ; This routine is called if DOS can't allocate the requested memory
-    mov dx, offset ERR_BUFFER
-    jmp Grafx_FileErrorMsgAndQuit
-    
 Grafx_FileErrorMsgAndQuit:
     ; Routine display the corresponding error message and exit
     call RESET_SCREEN
@@ -416,7 +350,7 @@ Grafx_FileErrorMsgAndQuit:
     int 21h
     
     call MemoryStillAvail
-    call FREE_ALL_IMG_MEMORY
+    ;call FREE_ALL_IMG_MEMORY
     
     call INT9_RESET
     

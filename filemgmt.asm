@@ -17,14 +17,13 @@ OPEN_FILE:
     ; basic function to open files
     ; DX must point to the filename in DS segment
     ; DI must point to a 4 word that will contain respectively 
-    ; FILEHANDLE (1w) + FILESIZE (2w - big endian) + FILESEGMENT (1w)
+    ; FILEHANDLE (1w) + FILESIZE (2w - big endian) + FILESEGMENT (1w)  - segment is prepopulated
 
     pusha
     
     ; Open file
     mov ax, 3d00h
     int 21h
-    
     jc CantOpen
     
     ; Save the handle
@@ -41,17 +40,6 @@ OPEN_FILE:
     jc CantRead
     mov [di+2], dx
     mov [di+4], ax
-    
-    ; Now we can allocate memory as needed
-    mov bx, ax
-    shr bx, 4
-    add bx, dx
-    mov ah, 48h
-    int 21h
-    
-    jc CantAllocateMemory
-    call MemoryStillAvail
-    mov [di+6], ax
         
     ; Remember we need to get back to the beginning of the file
     mov bx, [di]
@@ -87,68 +75,6 @@ OPEN_FILE:
 ; ********************************************************************************************
 ; ********************************************************************************************
 ; ** Various functions
-; Function to call to check how much memory is still available
-MemoryStillAvail:
-    pusha
-    push ds
-    
-    mov ax, @DATA
-    mov ds, ax
-
-    ; clear the string first before writing down the size
-    mov di, offset memory_size
-    mov cx, 5
-    call clear_ascii
-    
-    mov bx, 0ffffh
-    mov ah, 48h
-    int 21h
-    
-    mov ax, bx
-    shr ax, 6
-    
-    ; convert it to ASCII
-    mov di, offset memory_size
-    call convert_ax_ascii
-    
-    ; Then print it out
-    mov dx, offset msg_memsize
-    mov ah, 9
-    int 21h
-    
-    mov si, offset memory_size
-    mov cx, 5
-    call print_ascii
-    
-    mov dx, offset msg_memsize2
-    mov ah, 9
-    int 21h
-
-    pop ds
-    popa
-    ret
-
-clear_ascii:
-    ; CX = size of string
-    ; DI = address of the string to clear
-    
-    push di
-    push cx
-    push ax
-    push es
-
-    push ds
-    pop es
-    xor ax, ax
-    rep stosb
-
-    pop es
-    pop ax
-    pop cx
-    pop di
-
-    ret
-    
 ; list of error functions
 CantOpen:
     ; This routine is called if DOS can't access the file
@@ -165,11 +91,6 @@ CantClose:
     mov dx, offset ERR_FILE3
     jmp FileErrorMsgAndQuit
 
-CantAllocateMemory:
-    ; This routine is called if DOS can't allocate the requested memory
-    mov dx, offset ERR_FILE4
-    jmp FileErrorMsgAndQuit
-    
 FileErrorMsgAndQuit:
     ; Routine display the corresponding error message and exit
     call RESET_SCREEN

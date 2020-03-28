@@ -6,17 +6,20 @@
 
 .DATA
 FILENAME    db ".\IMGTEST.LBM", 0
-;FILENAME    db ".IMG_TEST.LBM", 0
-;FILENAME    db ".IMG5_VGA.LBM", 0
+;FILENAME    db "c:\IMG_TEST.LBM", 0
+FILENAME2   db ".\IMG5_VGA.LBM", 0
 FILEINFO    dw 4 dup (0)
 
 MSG_WAITKEY db 13, 10, "Press Any Key...", "$"
 
-MSG1        db "Loading LBM file", 13, 10, "$"
-MSG2        db "Extract image", 13, 10, "$"
-MSG3        db "Free LBM file", 13, 10, "$"
-MSG4        db "Allocate video buffer", 13, 10, "$"
-
+; size and pointer to memory allocated to game
+; we assign a temporary zone, MAX_LBM_FILES image buffers, 1 video buffers --> all 64kb
+; 5 * FFFF divided by 16 (segments) 
+DATA_SIZE           dw (MAX_LBM_FILES + 2) * 0FFFFh / 10h ; 4FFFh
+DATA_PTR            dw 0
+BUFFER_PTR          dw 0
+MEM_PTR_END         dw 0
+ERR_MEMALLOCATE     db "Could not allocate memory", 13, 10, "$"
 
 ; **********************************************
 ; **********************************************
@@ -39,59 +42,55 @@ MAIN PROC
     call INT9_SETUP
     call INTRO
 
-    ; **** debug message
-    mov dx, offset MSG1
-    mov ah, 9
+    ; now assign all the necessary memory
+    mov bx, [DATA_SIZE]
+    mov ah, 48h
     int 21h
+    jc NOT_ENOUGH_MEMORY
+    ;call MemoryStillAvail
 
-    ; open the file
+    ; we place the temporary zone at the beginning
+    ; then we start the data area 64kb after
+    mov bx, ax
+    mov [BUFFER_PTR], bx
+    add bx, 0fffh
+    mov [DATA_PTR], bx
+    
+    call ALLOCATE_IMG_PTR
+    mov [MEM_PTR_END], bx
+
+    ; open the first file
     mov dx, offset FILENAME
     mov di, offset FILEINFO
+    mov ax, [BUFFER_PTR]
+    mov [di+6], ax
     call OPEN_FILE
-    
-    ; **** debug message
-    mov dx, offset MSG2
-    mov ah, 9
-    int 21h
-    
+
     ; decompress the LBM file
     mov si, offset FILEINFO
     call EXTRACT_IMG
-    
-     ; **** debug message
-     mov dx, offset MSG3
-     mov ah, 9
-     int 21h   
-    
-    ;;;;; *** TEST
+
+    ; open the second file
+    mov dx, offset FILENAME2
     mov di, offset FILEINFO
-    mov ax, [di+6]
-    mov es, ax
-    mov ah, 49h
-    int 21h
+    mov ax, [BUFFER_PTR]
+    mov [di+6], ax
+    call OPEN_FILE
 
-
-    call MemoryStillAvail
-    ;;;;; *** TEST
+    ; decompress the LBM file
+    mov si, offset FILEINFO
+    call EXTRACT_IMG
     
     ; Then print a little message
     mov dx, offset MSG_WAITKEY
     mov ah, 9
     int 21h
-    
     call READ_KEY_WAIT
-
-    ; **** debug message
-    mov dx, offset MSG4
-    mov ah, 9
-    int 21h
     
-    call CREATE_VIDEOBUFFER
-    ; call SET_UP_GRAPHIC_MODE
-    jmp TEMPEND
-
-    DETECT_VSYNC
+    ; start graphic mode and display
+    call SWITCH_TO_320x200
     
+    ; ********** FIRST IMAGE *****************************
     ; Now move the image to the buffer
     push ds
     mov ax, [VIDEO_BUFFER]
@@ -115,26 +114,58 @@ MAIN PROC
     mov word ptr [FADEWAITITR], 2
     xor ax, ax
     call FADEOUT
+
+    ; ********** SECOND IMAGE *****************************
+    push ds
+    mov ax, [VIDEO_BUFFER]
+    mov es, ax
+    mov ax, [SCREEN_PTR + 2]
+    mov ds, ax
+    
+    xor di, di
+    xor si, si
+    mov cx, 320 * 200
+    rep movsb
+    pop ds
+    
+    call COPY_TO_VIDEOBUFFER
+
+    mov word ptr [FADEWAITITR], 4
+    mov al, 1
+    call FADEIN
+    call READ_KEY_WAIT
+    
+    ; and fadeout
+    mov al, 1
+    call FADEOUT
+
 TEMPEND:
     jmp END_GAME
 
-    
+
 MAIN ENDP
 
 
-END_GAME:
-    ; Put together functions to clear memory and restate interrupts...
-    
-    ; first free up the video buffer and all memory allocated to graphs
-    call FREE_ALL_IMG_MEMORY
-    call FREE_VIDEOBUFFER
-    
+END_GAME:    
     ; return INT to their former processes
     call INT9_RESET
     
     ; reset the screen and quit
-    ; call RESET_SCREEN
-    jmp ENDPROG 
+    call RESET_SCREEN
+    jmp ENDPROG
+
+
+NOT_ENOUGH_MEMORY:
+    ; This routine is called if DOS can't allocate the requested memory    
+    call RESET_SCREEN
+
+    mov dx, offset ERR_MEMALLOCATE
+    mov ah, 9
+    int 21h
+    
+    call INT9_RESET
+    
+    jmp ENDPROG
     
 END MAIN
 

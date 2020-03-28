@@ -36,7 +36,7 @@ SETUP:
     ; also place DS on the data segment by default
     mov ax, @DATA
     mov ds, ax
-    
+
     ret
 
 
@@ -53,6 +53,12 @@ ENDPROG:
     
     mov dx, offset GOODBYE_MSG
     mov ah, 09h
+    int 21h
+
+    ; free memory
+    mov ax, [BUFFER_PTR]
+    mov es, ax
+    mov ah, 49h
     int 21h
     
     call MemoryStillAvail
@@ -75,3 +81,65 @@ CantResizeMemory:
     int 21h
     
     jmp ENDPROG
+
+; Function to call to check how much memory is still available
+MemoryStillAvail:
+    pusha
+    push ds
+    
+    mov ax, @DATA
+    mov ds, ax
+
+    ; clear the string first before writing down the size
+    mov di, offset memory_size
+    mov cx, 5
+    call clear_ascii
+    
+    mov bx, 0ffffh
+    mov ah, 48h
+    int 21h
+    
+    mov ax, bx
+    shr ax, 6
+    
+    ; convert it to ASCII
+    mov di, offset memory_size
+    call convert_ax_ascii
+    
+    ; Then print it out
+    mov dx, offset msg_memsize
+    mov ah, 9
+    int 21h
+    
+    mov si, offset memory_size
+    mov cx, 5
+    call print_ascii
+    
+    mov dx, offset msg_memsize2
+    mov ah, 9
+    int 21h
+
+    pop ds
+    popa
+    ret
+
+clear_ascii:
+    ; CX = size of string
+    ; DI = address of the string to clear
+    
+    push di
+    push cx
+    push ax
+    push es
+
+    push ds
+    pop es
+    xor ax, ax
+    rep stosb
+
+    pop es
+    pop ax
+    pop cx
+    pop di
+
+    ret

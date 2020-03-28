@@ -27,16 +27,6 @@ READ_LBM:
     push si
     
     ; ****************************************************
-    ; ** Important, we now allocate the 64kb for the image  
-    mov bx, 0fa0h
-    mov ah, 48h
-    int 21h
-    
-    jc CantAllocateMemoryForImage
-    call MemoryStillAvail
-    mov [IMG_PTR], ax
-    
-    ; ****************************************************
     ; ** Now parse the LBM file
     
     ; get the file segment of file to ES
@@ -58,12 +48,12 @@ READ_LBM:
     xor cx, cx
     dec cx
     mov si, offset CMAP_REF
-find_cmap:
-    mov ax, [si]
-    repnz scasw
-    mov ax, [si+2]
-    scasw
-    jnz find_cmap
+    @@find_cmap:
+        mov ax, [si]
+        repnz scasw
+        mov ax, [si+2]
+        scasw
+        jnz @@find_cmap
     
     ; And store it (little annoying that movsb works with the registers the other way around)
     push ds
@@ -88,12 +78,12 @@ find_cmap:
     dec cx
     mov si, offset BODY_REF
     xor di, di
-find_body:
-    mov ax, [si]
-    repnz scasw
-    mov ax, [si+2]
-    scasw
-    jnz find_body
+    @@find_body:
+        mov ax, [si]
+        repnz scasw
+        mov ax, [si+2]
+        scasw
+        jnz @@find_body
     
     ; ********************************************
     ; ** The tricky bit --> Parse body data
@@ -111,37 +101,35 @@ find_body:
     pop ds
     
     ; we don't pop es here since we need to change it (DS is now pointing to BODY)
-    ;pop es 
-    ; mov si, offset BODY_BUFFER
     mov es, ax
     
     xor si, si
     xchg si, di
     xor ch, ch
-fill_data:
-    mov al, [si]
-    inc si
-    
-    mov cl, al
-    and al, 80h
+    @@fill_data:
+        mov al, [si]
+        inc si
+        
+        mov cl, al
+        and al, 80h
 
-    jz less80h
+        jz @@less80h
 
-    neg cl
-    inc cl
-    mov al, [si]
-    rep stosb
-    inc si
-    jmp test_pos
-    
-less80h:
-    inc cl
-    rep movsb
-test_pos:
-    cmp bx, si
-    ja fill_data
+        neg cl
+        inc cl
+        mov al, [si]
+        rep stosb
+        inc si
+        jmp @@test_pos
+        
+        @@less80h:
+            inc cl
+            rep movsb
+        @@test_pos:
+            cmp bx, si
+        ja @@fill_data
 
-end_filling:
+@@end_filling:
 
     ; All done we can leave now - and reset es/ds as they were
     ; first pop es (we skipped it just above)
@@ -156,23 +144,13 @@ end_filling:
     ; remember to free up the original file memory
     ; move si to di (last pop)
     pop di
-    ;mov ax, [di+6]
-    ;mov es, ax
-    ;mov ah, 49h
-    ;int 21h
-    ;call MemoryStillAvail
     
     popa
     ret 
     
 ; ********************************************************************************************
 ; ********************************************************************************************
-; ** Various functions
-CantAllocateMemoryForImage:
-    ; This routine is called if DOS can't allocate the requested memory
-    mov dx, offset ERR_FILE4
-    jmp LBM_FileErrorMsgAndQuit
-    
+; ** Various functions  
 LBM_FileErrorMsgAndQuit:
     ; Routine display the corresponding error message and exit
     call RESET_SCREEN
