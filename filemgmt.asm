@@ -9,7 +9,6 @@
 ERR_FILE1     db "Could not open file", 13, 10, "$"
 ERR_FILE2     db "Could not read file", 13, 10, "$"
 ERR_FILE3     db "Could not close file", 13, 10, "$"
-ERR_FILE4     db "Could not allocate memory", 13, 10, "$"
 
 .CODE
 

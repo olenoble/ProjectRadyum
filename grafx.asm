@@ -73,7 +73,6 @@ ALLOCATE_IMG_PTR:
     push cx
     push si
 
-    ;mov bx, [DATA_PTR]
     mov cx, MAX_LBM_FILES
     mov si, offset SCREEN_PTR
 

@@ -18,8 +18,7 @@ READ_LBM:
     ; decompress LBM file
     ; SI must point to the file info with the format:
     ; FILEHANDLE (1w) + FILESIZE (2w - big endian) + FILESEGMENT (1w)
-    ; the routine will free up the memory at the end!
-    ; the routine also allocates 64kb in memory for the image - stored in IMG_PTR
+    ; The routine will extract the file in the segment pointed in IMG_PTR
 
     pusha
     
