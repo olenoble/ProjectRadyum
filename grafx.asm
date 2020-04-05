@@ -193,6 +193,7 @@ SET_PALETTE:
     @@set_palette_loop:
         ; set the red/green/blue component
         lodsb
+        ror al, 4
         and al, 1111b
         shl al, 2
         out dx, al
@@ -252,6 +253,7 @@ FADEOUT:
         @@FadeOutColorLoop:
             ; set the red/green/blue component
             lodsb
+            ror al, 4
             and al, 1111b
             ; if greater than ah, use ah - otherwise use rgb
             ; this is effectively min(rgb, ah)
@@ -310,6 +312,7 @@ FADEIN:
         @@FadeInColorLoop:
             ; set the red/green/blue component
             lodsb
+            ror al, 4
             and al, 1111b
             ; if greater than ah, use ah - otherwise use rgb
             ; this is effectively min(rgb, ah)
