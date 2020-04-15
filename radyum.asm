@@ -7,7 +7,7 @@
 .STACK 4096
 
 .DATA
-FILENAME   db ".\INTRO.LBM", 0
+FILENAME   db "c:\INTRO.LBM", 0
 
 FILEINFO    dw 4 dup (0)
 
@@ -79,6 +79,7 @@ MAIN PROC
     
     ; start graphic mode and display
     call SWITCH_TO_320x200
+    call BLACKOUT
     
     ; ********** FIRST IMAGE *****************************
     ; Now move the image to the buffer
@@ -98,7 +99,34 @@ MAIN PROC
 
     xor ax, ax
     call FADEIN
-    call READ_KEY_WAIT
+
+    ; Insert here a cycle color loop
+    mov cl, 0
+    @@wait_for_key:
+        DETECT_VSYNC
+        ; for this cycle, only cycle every 4 vsync
+        mov ch, cl
+        and ch, 11b
+        jnz @@no_cycle_1
+        mov bl, 11 * 16
+        mov bh, 12 * 16 - 1
+        xor al, al
+        call COLORCYCLE
+        call SET_PALETTE
+    @@no_cycle_1:
+        mov ch, cl
+        and ch, 111b
+        jnz @@no_cycle_2
+        mov bl, 7 * 16
+        mov bh, 8 * 16 - 1
+        xor al, al
+        call COLORCYCLE
+        call SET_PALETTE
+    @@no_cycle_2:    
+        inc cl
+        call READ_KEY_NOWAIT
+        or al, al
+        jz @@wait_for_key
     
     ; and fadeout - but let's have a faster one
     mov word ptr [FADEWAITITR], 2

@@ -12,6 +12,7 @@ SCREEN_PTR   dw MAX_LBM_FILES dup (0)           ; segments to be allocated for i
 FADEWAITITR  dw 4
 IMG_COUNTER  db 0
 VIDEO_BUFFER dw 0
+TEMP_RGB     db 3 dup (0)
 
 ERR_BUFFER   db "Could not allocate memory for the video buffer", 13, 10, "$"
 
@@ -40,17 +41,13 @@ POINT_TO_PALETTE MACRO
     ; input = AL points to the palette number
     ; output = AX points to the beginning of palette
     ; need to add 300h x palette number to point to the right palette
-    mov cl, al
-    mov bx, 300h
-    xor ch, ch
-
-    mov ax, offset COLORMAPS
-    inc cx
-    @@PaletteShiftPos:
-        add ax, bx
-        dec cx
-        jnz @@PaletteShiftPos
-    sub ax, bx
+    mov ah, al
+    ; ah = al * 3 - we just need to set al to 0 then to create the multiple of 300h
+    shl ah, 1
+    add ah, al
+    xor al, al
+    ; then only add the starting position
+    add ax, offset COLORMAPS
 ENDM
 
 
@@ -208,12 +205,14 @@ BLACKOUT:
     ; set all colors to 0
     push ax
     push dx
+    push cx
     
     mov dx, 03c8h
     xor al, al
     out dx, al
     
     mov dx, 03c9h
+    mov cx, 256 * 3
     cli
     @@BlackOutLoop:
         mov al, 0
@@ -221,6 +220,10 @@ BLACKOUT:
         loop @@BlackOutLoop
 
     sti
+
+    pop cx
+    pop dx
+    pop ax
     ret
     
   
@@ -340,8 +343,75 @@ FADEIN:
     
     popa
     ret
+
+COLORCYCLE:
+    ; Create a color cycle - one shift at a time. Palette is not preserved!
+    ; AL is the color map number
+    ; BL is the first color - BH is the last color
+    ; Note that the code can handle cycles of up to 85 colors (this is because we count the color range as (bh-bl) * 3 
+    ; and assumes it is an 8bits - so bh-bl < 86)
+    ; Also note that this does not apply the palette (no call to SET_PALETTE) - this is to allow the code externally to handle it
+    pusha
+    push es
+
+    ; get the palette offset (and save it)
+    POINT_TO_PALETTE
+    mov si, ax
+
+    cld
+    ; save the last color (make sure that es == ds)
+    push bx
+    push ds
+    pop es
+
+    mov cx, 3
     
+    ; add bh * 3 to si
+    mov bl, bh
+    xor bh, bh
+    mov ax, bx
+    shl ax, 1
+    add ax, bx
+
+    add si, ax
+    mov di, offset TEMP_RGB
+    rep movsb
+
+    pop bx
+
+    ; To cycle through the color: 
+    ;   1. Have di point to the B of the last color
+    ;   2. Have si point to the B of the color before
+    ;   3. Set std and rep movsb with cx = (bh - bl) * 3
+    ; Note that now si points to the byte right after the last color
+    dec si
+    mov di, si
+    sub di, 3
+    xchg si, di
+    std
+
+    mov cl, bh
+    sub cl, bl
+    mov ch, cl
+    shl cl, 1
+    add cl, ch
+    xor ch, ch
+    rep movsb
+
+    ; Finally let's copy from TEMP the first color
+    ; DI should now point to the B of the first color
+    mov si, offset TEMP_RGB
+    add si, 2
+    mov cx, 3
+    rep movsb
     
+    ; clear DF just in case (we tend to assume it is 0 by default)
+    cld
+    pop es
+    popa
+    ret
+
+
 ; ********************************************************************************************
 ; ********************************************************************************************
 ; ** Various functions
