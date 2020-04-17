@@ -7,8 +7,8 @@
 .STACK 4096
 
 .DATA
-FILENAME   db "c:\INTRO.LBM", 0
-
+LOADINGSCR  db "c:\INTRO.LBM", 0
+TILESCR     db "c:\TILE.LBM", 0
 FILEINFO    dw 4 dup (0)
 
 MSG_WAITKEY db 13, 10, "Press Any Key...", "$"
@@ -60,14 +60,23 @@ MAIN PROC
     call ALLOCATE_IMG_PTR
     mov [MEM_PTR_END], bx
 
-    ; open the first file
-    mov dx, offset FILENAME
+    ; open the loading screen file
+    mov dx, offset LOADINGSCR
     mov di, offset FILEINFO
     mov ax, [BUFFER_PTR]
     mov [di+6], ax
     call OPEN_FILE
 
     ; decompress the LBM file
+    mov si, offset FILEINFO
+    call EXTRACT_IMG
+
+    ; open tile screen and decompress
+    mov dx, offset TILESCR
+    mov di, offset FILEINFO
+    mov ax, [BUFFER_PTR]
+    mov [di+6], ax
+    call OPEN_FILE
     mov si, offset FILEINFO
     call EXTRACT_IMG
     
@@ -122,7 +131,7 @@ MAIN PROC
         xor al, al
         call COLORCYCLE
         call SET_PALETTE
-    @@no_cycle_2:    
+    @@no_cycle_2:
         inc cl
         call READ_KEY_NOWAIT
         or al, al
@@ -133,6 +142,27 @@ MAIN PROC
     xor ax, ax
     call FADEOUT
 
+    ; Now just show the tile set
+    push ds
+    mov ax, [VIDEO_BUFFER]
+    mov es, ax
+    mov ax, [SCREEN_PTR+2]
+    mov ds, ax
+    
+    xor di, di 
+    xor si, si
+    mov cx, 320 * 200
+    rep movsb
+    pop ds
+    
+    call COPY_TO_VIDEOBUFFER
+
+    mov ax, 1
+    call SET_PALETTE
+    call READ_KEY_WAIT
+    mov ax, 1
+    call FADEOUT
+
 TEMPEND:
     jmp END_GAME
 
@@ -140,7 +170,7 @@ TEMPEND:
 MAIN ENDP
 
 
-END_GAME:    
+END_GAME:
     ; return INT to their former processes
     call INT9_RESET
     
