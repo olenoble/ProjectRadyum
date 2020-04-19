@@ -21,6 +21,16 @@ DATA_PTR            dw 0
 BUFFER_PTR          dw 0
 MEM_PTR_END         dw 0
 ERR_MEMALLOCATE     db "Could not allocate memory", 13, 10, "$"
+SCREENTEST          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
+                    dw 0602h, 8 dup (0302h), 0307h
+                    dw 0602h, 8 dup (0302h), 0307h
+                    dw 0602h, 8 dup (0302h), 0307h
+                    dw 0602h, 8 dup (0302h), 0307h
+                    dw 0602h, 8 dup (0302h), 0307h
+                    dw 0602h, 8 dup (0302h), 0307h
+                    dw 0602h, 8 dup (0302h), 0307h
+                    dw 0602h, 8 dup (0302h), 0307h
+                    db 0bh, 18 dup (05h), 0ah
 
 ; **********************************************
 ; **********************************************
@@ -48,7 +58,6 @@ MAIN PROC
     mov ah, 48h
     int 21h
     jc NOT_ENOUGH_MEMORY
-    ;call MemoryStillAvail
 
     ; we place the temporary zone at the beginning
     ; then we start the data area 64kb after
@@ -104,7 +113,7 @@ MAIN PROC
     rep movsb
     pop ds
     
-    call COPY_TO_VIDEOBUFFER
+    call COPY_VIDEOBUFFER
 
     xor ax, ax
     call FADEIN
@@ -155,13 +164,35 @@ MAIN PROC
     rep movsb
     pop ds
     
-    call COPY_TO_VIDEOBUFFER
+    call COPY_VIDEOBUFFER
 
     mov ax, 1
     call SET_PALETTE
     call READ_KEY_WAIT
     mov ax, 1
     call FADEOUT
+
+    call CLEAR_VIDEOBUFFER
+
+    ; generate un ecran dummy
+    push ds
+    mov ax, [VIDEO_BUFFER]
+    mov es, ax
+
+    ; move the tile config to the end of buffer
+    ; tile config is 20 * 10 bytes = 200 (there is 65535 - 64000 = 1535 left)
+    mov si, offset SCREENTEST
+    mov di, 320 * 200
+    mov cx, 100
+    rep movsw
+
+    
+    mov ax, [SCREEN_PTR+2]
+    mov ds, ax
+
+    mov si, offset SCREENTEST
+
+    pop ds
 
 TEMPEND:
     jmp END_GAME
@@ -187,9 +218,9 @@ NOT_ENOUGH_MEMORY:
     mov ah, 9
     int 21h
     
-    call INT9_RESET
-    
+    call INT9_RESET   
     jmp ENDPROG
-    
+
+
 END MAIN
 

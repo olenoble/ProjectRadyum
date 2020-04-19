@@ -88,10 +88,11 @@ ALLOCATE_IMG_PTR:
     ret
 
    
-COPY_TO_VIDEOBUFFER:
+COPY_VIDEOBUFFER:
     ; copy the contents of the video buffer over to the video memory
     pusha
-    
+    push es
+
     mov ax, 0a000h
     mov es, ax
     mov di, 0
@@ -106,7 +107,28 @@ COPY_TO_VIDEOBUFFER:
     rep movsb
     pop ds
     
+    pop es
     popa
+    ret
+
+
+CLEAR_VIDEOBUFFER:
+    ; clear the videobuffer - copy value in AX all over
+    push es
+    push cx
+    push di
+    
+    cld
+    mov cx, [VIDEO_BUFFER]
+    mov es, cx
+    xor di, di
+    
+    mov cx, 320 * 200 / 2
+    rep stosw
+
+    pop di
+    pop cx
+    pop es
     ret
     
 

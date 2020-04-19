@@ -106,7 +106,7 @@ MAIN PROC
     rep movsb
     pop ds
     
-    call COPY_TO_VIDEOBUFFER
+    call COPY_VIDEOBUFFER
 
     xor ax, ax
     call FADEIN
@@ -130,7 +130,7 @@ MAIN PROC
     rep movsb
     pop ds
     
-    call COPY_TO_VIDEOBUFFER
+    call COPY_VIDEOBUFFER
 
     mov word ptr [FADEWAITITR], 4
     mov al, 1
