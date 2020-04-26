@@ -8,7 +8,9 @@
 
 .DATA
 LOADINGSCR  db "c:\INTRO.LBM", 0
-TILESCR     db "c:\TILE.LBM", 0
+;TILESCR     db "c:\TILE.LBM", 0
+TILESCR     db "c:\GRIDT2.LBM", 0
+
 FILEINFO    dw 4 dup (0)
 
 MSG_WAITKEY db 13, 10, "Press Any Key...", "$"
@@ -22,15 +24,15 @@ BUFFER_PTR          dw 0
 MEM_PTR_END         dw 0
 ERR_MEMALLOCATE     db "Could not allocate memory", 13, 10, "$"
 SCREENTEST          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0602h, 8 dup (0302h), 0307h
-                    dw 0602h, 8 dup (0302h), 0307h
-                    dw 0602h, 8 dup (0302h), 0307h
-                    dw 0602h, 8 dup (0302h), 0307h
-                    dw 0602h, 8 dup (0302h), 0307h
-                    dw 0602h, 8 dup (0302h), 0307h
-                    dw 0602h, 8 dup (0302h), 0307h
-                    dw 0602h, 8 dup (0302h), 0307h
-                    db 0bh, 18 dup (05h), 0ah
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    db 0bh, 18 dup (05h), 0ah                
 
 ; **********************************************
 ; **********************************************
@@ -52,6 +54,9 @@ MAIN PROC
     call SETUP
     call INT9_SETUP
     call INTRO
+
+    ; set DF to 0 by default
+    cld
 
     ; now assign all the necessary memory
     mov bx, [DATA_SIZE]
@@ -126,8 +131,7 @@ MAIN PROC
         mov ch, cl
         and ch, 11b
         jnz @@no_cycle_1
-        mov bl, 11 * 16
-        mov bh, 12 * 16 - 1
+        mov bx, (12 * 16 - 1) * 16 * 16 + (11 * 16)
         xor al, al
         call COLORCYCLE
         call SET_PALETTE
@@ -135,8 +139,7 @@ MAIN PROC
         mov ch, cl
         and ch, 111b
         jnz @@no_cycle_2
-        mov bl, 7 * 16
-        mov bh, 8 * 16 - 1
+        mov bx, (8 * 16 - 1) * 16 * 16 + (7 * 16)
         xor al, al
         call COLORCYCLE
         call SET_PALETTE
@@ -152,47 +155,117 @@ MAIN PROC
     call FADEOUT
 
     ; Now just show the tile set
-    push ds
-    mov ax, [VIDEO_BUFFER]
-    mov es, ax
-    mov ax, [SCREEN_PTR+2]
-    mov ds, ax
+    ;push ds
+    ;mov ax, [VIDEO_BUFFER]
+    ;mov es, ax
+    ;mov ax, [SCREEN_PTR+2]
+    ;mov ds, ax
     
-    xor di, di 
-    xor si, si
-    mov cx, 320 * 200
-    rep movsb
-    pop ds
+    ;xor di, di 
+    ;xor si, si
+    ;mov cx, 320 * 200
+    ;rep movsb
+    ;pop ds
     
+    ;call COPY_VIDEOBUFFER
+
+    ;mov ax, 1
+    ;call SET_PALETTE
+    ;call READ_KEY_WAIT
+    ;mov ax, 1
+    ;call FADEOUT
+
+    xor ax, ax
+    call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
 
-    mov ax, 1
-    call SET_PALETTE
-    call READ_KEY_WAIT
-    mov ax, 1
-    call FADEOUT
-
-    call CLEAR_VIDEOBUFFER
-
-    ; generate un ecran dummy
-    push ds
+    ; *************************************************************************************************
+    ; *************************************************************************************************
+    ; generate a dummy screen
     mov ax, [VIDEO_BUFFER]
     mov es, ax
 
     ; move the tile config to the end of buffer
-    ; tile config is 20 * 10 bytes = 200 (there is 65535 - 64000 = 1535 left)
+    ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
+    ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
     mov si, offset SCREENTEST
     mov di, 320 * 200
     mov cx, 100
     rep movsw
 
-    
+    ; then we can add the corresponding position in the image for each tile
+    ; this takes an additional 400 bytes (since address is a word)
+    push ds
+    mov ds, ax
+    mov si, 320*200
+    mov di, 320*200+200
+    mov cx, 200
+    @@loop_tileaddresses:
+        ; to convert the tile number into a position
+        ; old code used if we need to multiply by 320
+        ;mov bl, es:[si]
+        ;xor bh, bh
+        ;mov ax, bx
+        ;and ax, 0fff0h
+        ;shl ax, 2
+        ;shl bx, 4
+        ;add ax, bx
+        ; easier now if we x256
+        mov al, es:[si]
+        shl ax, 4
+        shl ah, 4
+        stosw
+        inc si
+        dec cx
+        jnz @@loop_tileaddresses
+    pop ds
+
+    ; Now we need to fill up the buffer with the tiles
+    ; DS:SI points to the tiles graphics
+    ; ES:DI points to the buffer
+    ; ES:BX points to the tile address table
+    push ds
     mov ax, [SCREEN_PTR+2]
     mov ds, ax
 
-    mov si, offset SCREENTEST
+    ; iterate over rows
+    ; dl = row count
+    ; dh is used as a column/tile count
+    xor dx, dx
+    xor di, di
+    mov bx, 320*200 + 200 - 40
+    xor al, al
+    @@plot_rows:
+        ; if dl mod 16 == 0 we need to add 20
+        mov ah, dl
+        and ah, 0Fh
+        jnz @@same_tile_row
+        add bx, 40
+    @@same_tile_row:
+        ; we also need to add to si the number of rows in the current tileset
+        ; we essentially need to keep the value of ah from above multiply by 256 (2^8)
+        ; essentially this means using ah to add to the upper bit on si (i.e si + ax)
+        mov dh, 20
+        @@plot_columns:
+            mov si, es:[bx]
+            add si, ax
+            mov cl, 8
+            rep movsw
+            add bx, 2
+            dec dh
+            jnz @@plot_columns
+
+        sub bx, 40
+        inc dl
+        cmp dl, 160
+        jnz @@plot_rows
 
     pop ds
+
+    call COPY_VIDEOBUFFER
+    mov ax, 1
+    call SET_PALETTE
+    call READ_KEY_WAIT
 
 TEMPEND:
     jmp END_GAME

@@ -422,8 +422,7 @@ COLORCYCLE:
 
     ; Finally let's copy from TEMP the first color
     ; DI should now point to the B of the first color
-    mov si, offset TEMP_RGB
-    add si, 2
+    mov si, 2 + offset TEMP_RGB
     mov cx, 3
     rep movsb
     
@@ -444,7 +443,6 @@ Grafx_FileErrorMsgAndQuit:
     int 21h
     
     call MemoryStillAvail
-    ;call FREE_ALL_IMG_MEMORY
     
     call INT9_RESET
     
