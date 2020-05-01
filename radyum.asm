@@ -32,7 +32,18 @@ SCREENTEST          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0306h, 8 dup (0302h), 0702h
                     dw 0206h, 8 dup (0203h), 0703h
                     dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah                
+                    db 0bh, 18 dup (05h), 0ah
+
+SCREENTEST2          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    db 0bh, 18 dup (05h), 0ah
 
 ; **********************************************
 ; **********************************************
@@ -154,27 +165,6 @@ MAIN PROC
     xor ax, ax
     call FADEOUT
 
-    ; Now just show the tile set
-    ;push ds
-    ;mov ax, [VIDEO_BUFFER]
-    ;mov es, ax
-    ;mov ax, [SCREEN_PTR+2]
-    ;mov ds, ax
-    
-    ;xor di, di 
-    ;xor si, si
-    ;mov cx, 320 * 200
-    ;rep movsb
-    ;pop ds
-    
-    ;call COPY_VIDEOBUFFER
-
-    ;mov ax, 1
-    ;call SET_PALETTE
-    ;call READ_KEY_WAIT
-    ;mov ax, 1
-    ;call FADEOUT
-
     xor ax, ax
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
@@ -188,7 +178,7 @@ MAIN PROC
     ; move the tile config to the end of buffer
     ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
     ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
-    mov si, offset SCREENTEST
+    mov si, offset SCREENTEST2
     mov di, 320 * 200
     mov cx, 100
     rep movsw
@@ -263,9 +253,16 @@ MAIN PROC
     pop ds
 
     call COPY_VIDEOBUFFER
+    mov word ptr [FADEWAITITR], 5
     mov ax, 1
-    call SET_PALETTE
+    call FADEIN
+    ;call SET_PALETTE
     call READ_KEY_WAIT
+
+    mov word ptr [FADEWAITITR], 5
+    mov ax, 1
+    call FADEOUT
+
 
 TEMPEND:
     jmp END_GAME
