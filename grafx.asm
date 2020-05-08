@@ -40,7 +40,6 @@ POINT_TO_PALETTE MACRO
     local @@PaletteShiftPos
     ; input = AL points to the palette number
     ; output = AX points to the beginning of palette
-    ; need to add 300h x palette number to point to the right palette
     mov ah, al
     ; ah = al * 3 - we just need to set al to 0 then to create the multiple of 300h
     shl ah, 1
@@ -90,7 +89,10 @@ ALLOCATE_IMG_PTR:
    
 COPY_VIDEOBUFFER:
     ; copy the contents of the video buffer over to the video memory
-    pusha
+    push ax
+    push cx
+    push si
+    push di
     push es
 
     mov ax, 0a000h
@@ -108,7 +110,10 @@ COPY_VIDEOBUFFER:
     pop ds
     
     pop es
-    popa
+    pop di
+    pop si
+    pop cx
+    pop ax
     ret
 
 
@@ -432,6 +437,83 @@ COLORCYCLE:
     popa
     ret
 
+
+DISPLAY_TILESCREEN:
+    ; DS points to the tiles graphics segment
+    ; ES points to the buffer segment
+    ; ES:BX points to the tile address table
+    pusha
+
+    ; iterate over rows
+    ; dl = row count
+    ; dh is used as a column/tile count
+    xor dx, dx
+    xor di, di
+    mov bx, 320*200 + 200 - 40
+    xor al, al
+    @@plot_rows:
+        ; if dl mod 16 == 0 we need to add 20
+        mov ah, dl
+        and ah, 0Fh
+        jnz @@same_tile_row
+        add bx, 40
+    @@same_tile_row:
+        ; we also need to add to si the number of rows in the current tileset
+        ; we essentially need to keep the value of ah from above multiply by 256 (2^8)
+        ; essentially this means using ah to add to the upper bit on si (i.e si + ax)
+        mov dh, 20
+        @@plot_columns:
+            mov si, es:[bx]
+            add si, ax
+            mov cl, 8
+            rep movsw
+            add bx, 2
+            dec dh
+            jnz @@plot_columns
+
+        sub bx, 40
+        inc dl
+        cmp dl, 160
+        jnz @@plot_rows
+    
+    popa
+    ret
+
+
+DISPLAY_SPRITE:
+    ; DS points to the tiles graphics segment
+    ; ES points to the buffer segment
+    ; BX is the spite number (0xABh --> A in hex is the row and B in hex is the coloumn)
+    pusha
+
+    ; convert bx into a proper shift to sprite position
+    shl bx, 4
+    shl bh, 4
+    sub di, bx
+
+    ; iterate over rows
+    ; dl = row count
+    ; dh is used as a column/tile count
+    mov ch, 16
+    @@plot_sprite_rows:
+        mov cl, 16
+        @@plot_sprite_columns:
+            mov al, ds:[bx]
+            or al, al
+            jz @@skip_pixel
+            mov es:[di+bx], al
+        @@skip_pixel:
+            inc bx
+            dec cl
+            jnz @@plot_sprite_columns
+
+        add bx, 240
+        add di, 304 -240
+        dec ch
+        jnz @@plot_sprite_rows
+    
+    popa
+    ret
 
 ; ********************************************************************************************
 ; ********************************************************************************************

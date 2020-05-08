@@ -34,7 +34,7 @@ SCREENTEST          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0306h, 8 dup (0302h), 0702h
                     db 0bh, 18 dup (05h), 0ah
 
-SCREENTEST2          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
+SCREENTEST2         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0206h, 8 dup (0203h), 0703h
                     dw 0306h, 8 dup (0302h), 0702h
                     dw 0206h, 8 dup (0203h), 0703h
@@ -191,16 +191,7 @@ MAIN PROC
     mov di, 320*200+200
     mov cx, 200
     @@loop_tileaddresses:
-        ; to convert the tile number into a position
-        ; old code used if we need to multiply by 320
-        ;mov bl, es:[si]
-        ;xor bh, bh
-        ;mov ax, bx
-        ;and ax, 0fff0h
-        ;shl ax, 2
-        ;shl bx, 4
-        ;add ax, bx
-        ; easier now if we x256
+        ; to convert the tile number into a position - easy now if we use x256
         mov al, es:[si]
         shl ax, 4
         shl ah, 4
@@ -211,55 +202,40 @@ MAIN PROC
     pop ds
 
     ; Now we need to fill up the buffer with the tiles
-    ; DS:SI points to the tiles graphics
-    ; ES:DI points to the buffer
-    ; ES:BX points to the tile address table
     push ds
     mov ax, [SCREEN_PTR+2]
     mov ds, ax
+    call DISPLAY_TILESCREEN
 
-    ; iterate over rows
-    ; dl = row count
-    ; dh is used as a column/tile count
-    xor dx, dx
-    xor di, di
-    mov bx, 320*200 + 200 - 40
-    xor al, al
-    @@plot_rows:
-        ; if dl mod 16 == 0 we need to add 20
-        mov ah, dl
-        and ah, 0Fh
-        jnz @@same_tile_row
-        add bx, 40
-    @@same_tile_row:
-        ; we also need to add to si the number of rows in the current tileset
-        ; we essentially need to keep the value of ah from above multiply by 256 (2^8)
-        ; essentially this means using ah to add to the upper bit on si (i.e si + ax)
-        mov dh, 20
-        @@plot_columns:
-            mov si, es:[bx]
-            add si, ax
-            mov cl, 8
-            rep movsw
-            add bx, 2
-            dec dh
-            jnz @@plot_columns
-
-        sub bx, 40
-        inc dl
-        cmp dl, 160
-        jnz @@plot_rows
+    mov di, 320 * 16 * 3 + 160
+    mov bx, 11h
+    call DISPLAY_SPRITE
 
     pop ds
-
     call COPY_VIDEOBUFFER
-    mov word ptr [FADEWAITITR], 5
+
+    ; a little cycle of colors here for a classy effect
+    mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEIN
-    ;call SET_PALETTE
-    call READ_KEY_WAIT
+    mov cl, 0
+    @@wait_for_key_tile:
+        DETECT_VSYNC
+        ; for this cycle, only cycle every 4 vsync
+        mov ch, cl
+        and ch, 11b
+        jnz @@no_cycle_tile
+        mov bx, (10 * 16 - 1) * 16 * 16 + (9 * 16)
+        mov al, 1
+        call COLORCYCLE
+        call SET_PALETTE
+    @@no_cycle_tile:
+        inc cl
+        call READ_KEY_NOWAIT
+        or al, al
+        jz @@wait_for_key_tile
 
-    mov word ptr [FADEWAITITR], 5
+    mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEOUT
 
@@ -291,6 +267,17 @@ NOT_ENOUGH_MEMORY:
     call INT9_RESET   
     jmp ENDPROG
 
+MULTIPLYx320:
+    ; old code used if we need to multiply by 320
+    ; value is in es:[si] (8bits)
+    mov bl, es:[si]
+    xor bh, bh
+    mov ax, bx
+    and ax, 0fff0h
+    shl ax, 2
+    shl bx, 4
+    add ax, bx
+    ret
 
 END MAIN
 
