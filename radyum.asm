@@ -8,7 +8,6 @@
 
 .DATA
 LOADINGSCR  db "c:\INTRO.LBM", 0
-;TILESCR     db "c:\TILE.LBM", 0
 TILESCR     db "c:\GRIDT2.LBM", 0
 
 FILEINFO    dw 4 dup (0)
@@ -44,6 +43,8 @@ SCREENTEST2         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
                     dw 0306h, 8 dup (0302h), 0702h
                     db 0bh, 18 dup (05h), 0ah
+
+CHARSTYLE           db 30h
 
 ; **********************************************
 ; **********************************************
@@ -114,6 +115,8 @@ MAIN PROC
     ; start graphic mode and display
     call SWITCH_TO_320x200
     call BLACKOUT
+
+    jmp GOTOTEST
     
     ; ********** FIRST IMAGE *****************************
     ; Now move the image to the buffer
@@ -168,7 +171,7 @@ MAIN PROC
     xor ax, ax
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
-
+GOTOTEST:
     ; *************************************************************************************************
     ; *************************************************************************************************
     ; generate a dummy screen
@@ -206,11 +209,6 @@ MAIN PROC
     mov ax, [SCREEN_PTR+2]
     mov ds, ax
     call DISPLAY_TILESCREEN
-
-    mov di, 320 * 16 * 3 + 160
-    mov bx, 11h
-    call DISPLAY_SPRITE
-
     pop ds
     call COPY_VIDEOBUFFER
 
@@ -220,10 +218,30 @@ MAIN PROC
     call FADEIN
     mov cl, 0
     @@wait_for_key_tile:
+
+        xor bh, bh
+        mov bl, [CHARSTYLE]
+        push ds
+        mov ax, [SCREEN_PTR+2]
+        mov ds, ax
+        mov ax, bx
+        mov di, 320 * 16 * 3 + 160
+        mov bx, 3h
+        call DISPLAY_SPRITE 
+        mov bx, ax
+        ; call DISPLAY_TILESCREEN
+        call DISPLAY_SPRITE 
+        pop ds
+        call COPY_VIDEOBUFFER
+        inc bl
+        and bl, 11110011b
+        mov [CHARSTYLE], bl
+
         DETECT_VSYNC
+DETECT_VSYNC
         ; for this cycle, only cycle every 4 vsync
         mov ch, cl
-        and ch, 11b
+        and ch, 0b
         jnz @@no_cycle_tile
         mov bx, (10 * 16 - 1) * 16 * 16 + (9 * 16)
         mov al, 1

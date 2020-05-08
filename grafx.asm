@@ -105,8 +105,8 @@ COPY_VIDEOBUFFER:
     xor si, si
     
     DETECT_VSYNC
-    mov cx, 320 * 200
-    rep movsb
+    mov cx, 320 * 100
+    rep movsw
     pop ds
     
     pop es
@@ -441,12 +441,13 @@ COLORCYCLE:
 DISPLAY_TILESCREEN:
     ; DS points to the tiles graphics segment
     ; ES points to the buffer segment
-    ; ES:BX points to the tile address table
+    ; ES:BX points to the tile address table (not an input)
     pusha
 
     ; iterate over rows
     ; dl = row count
     ; dh is used as a column/tile count
+    xor cx, cx
     xor dx, dx
     xor di, di
     mov bx, 320*200 + 200 - 40
@@ -483,7 +484,7 @@ DISPLAY_TILESCREEN:
 DISPLAY_SPRITE:
     ; DS points to the tiles graphics segment
     ; ES points to the buffer segment
-    ; BX is the spite number (0xABh --> A in hex is the row and B in hex is the coloumn)
+    ; BX is the sprite number (0xABh --> A in hex is the row and B in hex is the coloumn)
     pusha
 
     ; convert bx into a proper shift to sprite position
@@ -491,9 +492,7 @@ DISPLAY_SPRITE:
     shl bh, 4
     sub di, bx
 
-    ; iterate over rows
-    ; dl = row count
-    ; dh is used as a column/tile count
+    ; iterate over rows/columns (16 of each)
     mov ch, 16
     @@plot_sprite_rows:
         mov cl, 16
