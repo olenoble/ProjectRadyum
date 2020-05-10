@@ -75,7 +75,7 @@ ALLOCATE_IMG_PTR:
     @@LoopImgPtr:
         mov [si], bx
         add si, 2
-        add bx, 0fa0h ;0fffh
+        add bx, 0fa0h
         dec cx
         jnz @@LoopImgPtr
     
@@ -442,6 +442,7 @@ DISPLAY_TILESCREEN:
     ; DS points to the tiles graphics segment
     ; ES points to the buffer segment
     ; ES:BX points to the tile address table (not an input)
+    ; the tiles addresses must be stored in 320*200 + 200
     pusha
 
     ; iterate over rows
@@ -452,6 +453,137 @@ DISPLAY_TILESCREEN:
     xor di, di
     mov bx, 320*200 + 200 - 40
     xor al, al
+    @@plot_rows:
+        ; if dl mod 16 == 0 we need to add 20
+        mov ah, dl
+        and ah, 0Fh
+        jnz @@same_tile_row
+        add bx, 40
+    @@same_tile_row:
+        ; we also need to add to si the number of rows in the current tileset
+        ; we essentially need to keep the value of ah from above multiply by 256 (2^8)
+        ; essentially this means using ah to add to the upper bit on si (i.e si + ax)
+        mov dh, 20
+        @@plot_columns:
+            mov si, es:[bx]
+            add si, ax
+            mov cl, 8
+            rep movsw
+            add bx, 2
+            dec dh
+            jnz @@plot_columns
+
+        sub bx, 40
+        inc dl
+        cmp dl, 160
+        jnz @@plot_rows
+    
+    popa
+    ret
+
+
+DISPLAY_TILESCREEN_FAST:
+    ; Attempt at faster tileset generator - same inputs as DISPLAY_TILESCREEN
+    pusha
+
+    ; iterate over rows
+    ; dl = row count
+    ; dh is used as a column/tile count
+    xor cx, cx
+    xor dx, dx
+    xor di, di
+    mov bx, 320 * 200 + 200 - 40
+    mov dh, 20
+    @@generate_column_fast:
+        ; dh indicates the columns
+        ;xor bh, bh
+        ;mov bl, dh
+        ;shl bl, 2   ; a word per column
+        ;add bx, 320 * 200 + 200 - 40
+
+        mov dl, 10
+        @@plot_rows_fast:
+            ; this is brute force but the idea is that we know tiles have 16 rows/columns
+            ; so we can just repeat the calculation 16 times to avoid having a loop with a counter and jnz
+            add bx, 40
+            mov si, es:[bx]
+            mov cl, 8
+            rep movsw               ; iteration 1
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 2
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 3
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 4
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 5
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 6
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 7
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 8
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 9
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 10      
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 11
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 12
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 13
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 14
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 15
+            add di, 320 - 16
+            add si, 256 - 16
+            mov cl, 8
+            rep movsw               ; iteration 16
+            add di, 320 - 16
+            dec dl
+            jnz @@plot_rows_fast
+        
+        ; Now bring back di to the beginning of the next column
+        sub di, 160 * 320 - 16
+        sub bx, 40 * 10 - 2
+        dec dh
+        ;cmp dh, 20
+        jnz @@generate_column_fast
+    
+    popa
+    ret
+
+
     @@plot_rows:
         ; if dl mod 16 == 0 we need to add 20
         mov ah, dl

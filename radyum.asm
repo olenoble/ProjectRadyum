@@ -1,6 +1,7 @@
 .MODEL SMALL
 .386
 
+LOCALS @@
 
 ; TODO --> Cycle of colors on the intro file
 
@@ -45,6 +46,7 @@ SCREENTEST2         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     db 0bh, 18 dup (05h), 0ah
 
 CHARSTYLE           db 30h
+DIRECTION           dw -1
 
 ; **********************************************
 ; **********************************************
@@ -168,10 +170,11 @@ MAIN PROC
     xor ax, ax
     call FADEOUT
 
+GOTOTEST:
     xor ax, ax
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
-GOTOTEST:
+
     ; *************************************************************************************************
     ; *************************************************************************************************
     ; generate a dummy screen
@@ -208,7 +211,7 @@ GOTOTEST:
     push ds
     mov ax, [SCREEN_PTR+2]
     mov ds, ax
-    call DISPLAY_TILESCREEN
+    call DISPLAY_TILESCREEN_FAST
     pop ds
     call COPY_VIDEOBUFFER
 
@@ -216,30 +219,40 @@ GOTOTEST:
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEIN
+
     mov cl, 0
+
+    mov di, 320 * 16 * 3 + 160
     @@wait_for_key_tile:
 
         xor bh, bh
         mov bl, [CHARSTYLE]
+
         push ds
         mov ax, [SCREEN_PTR+2]
         mov ds, ax
         mov ax, bx
-        mov di, 320 * 16 * 3 + 160
         mov bx, 3h
-        call DISPLAY_SPRITE 
+        call DISPLAY_SPRITE
         mov bx, ax
-        ; call DISPLAY_TILESCREEN
+        ;call DISPLAY_TILESCREEN_FAST
         call DISPLAY_SPRITE 
         pop ds
+
         call COPY_VIDEOBUFFER
+
         inc bl
         and bl, 11110011b
         mov [CHARSTYLE], bl
 
-        DETECT_VSYNC
-DETECT_VSYNC
+        add di, [DIRECTION]
+        add di, [DIRECTION]
+        
+
+
+
         ; for this cycle, only cycle every 4 vsync
+        ; DETECT_VSYNC
         mov ch, cl
         and ch, 0b
         jnz @@no_cycle_tile
