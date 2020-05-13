@@ -50,6 +50,76 @@ POINT_TO_PALETTE MACRO
 ENDM
 
 
+GENERATE_TILE_FAST MACRO
+    ; a fast brute-force way of generating a tile
+    ; input = DS:SI points to the top left corner of the tile
+    ;         ES:DI point to the top left corner of the buffer to display
+    ; SI, DI and CX will be modified
+    mov cl, 8
+    rep movsw               ; iteration 1
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 2
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 3
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 4
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 5
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 6
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 7
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 8
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 9
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 10      
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 11
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 12
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 13
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 14
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 15
+    add di, 320 - 16
+    add si, 256 - 16
+    mov cl, 8
+    rep movsw               ; iteration 16
+ENDM
+
+
 ; ************************************************************************************
 ; ** real code is here
 .CODE  
@@ -91,6 +161,7 @@ COPY_VIDEOBUFFER:
     ; copy the contents of the video buffer over to the video memory
     push ax
     push cx
+    push dx
     push si
     push di
     push es
@@ -112,6 +183,7 @@ COPY_VIDEOBUFFER:
     pop es
     pop di
     pop si
+    pop dx
     pop cx
     pop ax
     ret
@@ -495,80 +567,13 @@ DISPLAY_TILESCREEN_FAST:
     mov bx, 320 * 200 + 200 - 40
     mov dh, 20
     @@generate_column_fast:
-        ; dh indicates the columns
-        ;xor bh, bh
-        ;mov bl, dh
-        ;shl bl, 2   ; a word per column
-        ;add bx, 320 * 200 + 200 - 40
-
         mov dl, 10
         @@plot_rows_fast:
             ; this is brute force but the idea is that we know tiles have 16 rows/columns
             ; so we can just repeat the calculation 16 times to avoid having a loop with a counter and jnz
             add bx, 40
             mov si, es:[bx]
-            mov cl, 8
-            rep movsw               ; iteration 1
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 2
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 3
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 4
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 5
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 6
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 7
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 8
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 9
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 10      
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 11
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 12
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 13
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 14
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 15
-            add di, 320 - 16
-            add si, 256 - 16
-            mov cl, 8
-            rep movsw               ; iteration 16
+            GENERATE_TILE_FAST
             add di, 320 - 16
             dec dl
             jnz @@plot_rows_fast
@@ -577,37 +582,7 @@ DISPLAY_TILESCREEN_FAST:
         sub di, 160 * 320 - 16
         sub bx, 40 * 10 - 2
         dec dh
-        ;cmp dh, 20
         jnz @@generate_column_fast
-    
-    popa
-    ret
-
-
-    @@plot_rows:
-        ; if dl mod 16 == 0 we need to add 20
-        mov ah, dl
-        and ah, 0Fh
-        jnz @@same_tile_row
-        add bx, 40
-    @@same_tile_row:
-        ; we also need to add to si the number of rows in the current tileset
-        ; we essentially need to keep the value of ah from above multiply by 256 (2^8)
-        ; essentially this means using ah to add to the upper bit on si (i.e si + ax)
-        mov dh, 20
-        @@plot_columns:
-            mov si, es:[bx]
-            add si, ax
-            mov cl, 8
-            rep movsw
-            add bx, 2
-            dec dh
-            jnz @@plot_columns
-
-        sub bx, 40
-        inc dl
-        cmp dl, 160
-        jnz @@plot_rows
     
     popa
     ret

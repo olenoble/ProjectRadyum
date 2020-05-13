@@ -3,7 +3,11 @@
 
 LOCALS @@
 
-; TODO --> Cycle of colors on the intro file
+; TO DO --> instead of refreshing the whole screen
+; only refresh the 32*32 area around (should be able to nearly double frame by second)
+
+; Constants
+CHARACTER_STEP   equ 4
 
 .STACK 4096
 
@@ -45,8 +49,10 @@ SCREENTEST2         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0306h, 8 dup (0302h), 0702h
                     db 0bh, 18 dup (05h), 0ah
 
-CHARSTYLE           db 30h
-DIRECTION           dw -1
+CHARSTYLE           db 40h
+DIRECTION           dw CHARACTER_STEP
+CHAR_POS_X          dw 16
+CHAR_POS_Y          dw 64
 
 ; **********************************************
 ; **********************************************
@@ -207,50 +213,57 @@ GOTOTEST:
         jnz @@loop_tileaddresses
     pop ds
 
-    ; Now we need to fill up the buffer with the tiles
-    push ds
-    mov ax, [SCREEN_PTR+2]
-    mov ds, ax
-    call DISPLAY_TILESCREEN_FAST
-    pop ds
-    call COPY_VIDEOBUFFER
-
     ; a little cycle of colors here for a classy effect
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEIN
 
     mov cl, 0
-
-    mov di, 320 * 16 * 3 + 160
+    mov dx, 0
     @@wait_for_key_tile:
+
+        mov bx, [CHAR_POS_Y]
+        call MULTIPLYx320
+        mov di, [CHAR_POS_X]
+        add di, bx
 
         xor bh, bh
         mov bl, [CHARSTYLE]
 
+        ; refresh screen and display sprite
         push ds
         mov ax, [SCREEN_PTR+2]
         mov ds, ax
-        mov ax, bx
-        mov bx, 3h
-        call DISPLAY_SPRITE
-        mov bx, ax
         ;call DISPLAY_TILESCREEN_FAST
         call DISPLAY_SPRITE 
         pop ds
-
         call COPY_VIDEOBUFFER
 
+        ; move player
+        mov ax, [DIRECTION]
+        inc dx
+        cmp dx, 280 / CHARACTER_STEP
+        jnz @@carry_on_moving
+        
+        xor dx, dx
+        neg ax
+        mov [DIRECTION], ax
+
+        mov bh, ah
+        and bh, 11100000b
+        add bh, 10h
+
+        add bl, bh
+
+    @@carry_on_moving:
         inc bl
         and bl, 11110011b
         mov [CHARSTYLE], bl
 
-        add di, [DIRECTION]
-        add di, [DIRECTION]
+        mov bx, [CHAR_POS_X]
+        add bx, ax
+        mov [CHAR_POS_X], bx
         
-
-
-
         ; for this cycle, only cycle every 4 vsync
         ; DETECT_VSYNC
         mov ch, cl
@@ -299,16 +312,29 @@ NOT_ENOUGH_MEMORY:
     jmp ENDPROG
 
 MULTIPLYx320:
-    ; old code used if we need to multiply by 320
-    ; value is in es:[si] (8bits)
-    mov bl, es:[si]
-    xor bh, bh
+    ; Input BX (value to multiply)
+    ; Output BX = BX * 320  -  AX is modified
+    ; Note that output is 16bits so BX < 65535 / 320 --> BX < 205
     mov ax, bx
-    and ax, 0fff0h
-    shl ax, 2
-    shl bx, 4
-    add ax, bx
+    shl ax, 8
+    shl bx, 6
+    add bx, ax
     ret
+
+    ;mov ax, bx
+    ;and ax, 0fff0h
+    ;shl ax, 2
+    ;shl bx, 4
+    ;; add ax, bx
+    ;add bx, ax
+    ;ret
 
 END MAIN
 
+; with screen display fast
+; 10s for 5 laps - each lap is 70 screen refresh
+; 2s per lap --> 35 frames per second
+
+; non fast
+; 15s for 5 laps (70 frames per lap)
+; 23 frames per second
