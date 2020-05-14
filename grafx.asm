@@ -513,8 +513,7 @@ COLORCYCLE:
 DISPLAY_TILESCREEN:
     ; DS points to the tiles graphics segment
     ; ES points to the buffer segment
-    ; ES:BX points to the tile address table (not an input)
-    ; the tiles addresses must be stored in 320*200 + 200
+    ; Note that the tiles addresses must be stored in ES: (320*200 + 200)
     pusha
 
     ; iterate over rows
@@ -561,7 +560,7 @@ DISPLAY_TILESCREEN_FAST:
     ; iterate over rows
     ; dl = row count
     ; dh is used as a column/tile count
-    xor cx, cx
+    ; xor cx, cx
     xor dx, dx
     xor di, di
     mov bx, 320 * 200 + 200 - 40
@@ -581,6 +580,40 @@ DISPLAY_TILESCREEN_FAST:
         ; Now bring back di to the beginning of the next column
         sub di, 160 * 320 - 16
         sub bx, 40 * 10 - 2
+        dec dh
+        jnz @@generate_column_fast
+    
+    popa
+    ret
+
+
+DISPLAY_METATILE_FAST:
+    ; DS points to the tiles graphics segment
+    ; ES points to the buffer segment
+    ; DI points to the position of top left time
+    ; ES:BX points to the tile address - top left time
+    pusha
+
+    ; iterate over rows
+    ; dl = row count
+    ; dh is used as a column/tile count
+    xor dx, dx
+    mov dh, 2
+    @@generate_column_fast:
+        mov dl, 2
+        @@plot_rows_fast:
+            ; this is brute force but the idea is that we know tiles have 16 rows/columns
+            ; so we can just repeat the calculation twice to avoid having a loop with a counter and jnz
+            mov si, es:[bx]
+            GENERATE_TILE_FAST
+            add di, 320 - 16
+            add bx, 40
+            dec dl
+            jnz @@plot_rows_fast
+        
+        ; Now bring back di to the beginning of the next column
+        sub di, 32 * 320 - 16
+        sub bx, 40 * 2 - 2
         dec dh
         jnz @@generate_column_fast
     

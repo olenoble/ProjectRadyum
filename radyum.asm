@@ -234,7 +234,7 @@ GOTOTEST:
         push ds
         mov ax, [SCREEN_PTR+2]
         mov ds, ax
-        ;call DISPLAY_TILESCREEN_FAST
+        call DISPLAY_TILESCREEN_FAST
         call DISPLAY_SPRITE 
         pop ds
         call COPY_VIDEOBUFFER
