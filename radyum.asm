@@ -1,12 +1,11 @@
 .MODEL SMALL
 .386
 
-LOCALS @@
-
 ; TO DO --> instead of refreshing the whole screen
 ; only refresh the 32*32 area around (should be able to nearly double frame by second)
 
 ; Constants
+LOCALS @@
 CHARACTER_STEP   equ 4
 
 .STACK 4096
@@ -211,20 +210,31 @@ GOTOTEST:
         inc si
         dec cx
         jnz @@loop_tileaddresses
+
     pop ds
+
+    ; test METATILE
+    push ds
+    mov ax, [SCREEN_PTR+2]
+    mov ds, ax
+    call DISPLAY_TILESCREEN_FAST
+    pop ds
+    call COPY_VIDEOBUFFER
 
     ; a little cycle of colors here for a classy effect
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEIN
 
+    call READ_KEY_WAIT
+
     mov cl, 0
     mov dx, 0
     @@wait_for_key_tile:
 
         mov bx, [CHAR_POS_Y]
-        call MULTIPLYx320
         mov di, [CHAR_POS_X]
+        call MULTIPLYx320
         add di, bx
 
         xor bh, bh
@@ -234,10 +244,44 @@ GOTOTEST:
         push ds
         mov ax, [SCREEN_PTR+2]
         mov ds, ax
-        call DISPLAY_TILESCREEN_FAST
-        call DISPLAY_SPRITE 
-        pop ds
+        ;call DISPLAY_TILESCREEN_FAST
+        call DISPLAY_SPRITE
         call COPY_VIDEOBUFFER
+
+        ; redraw the meta tile around the character
+        pop ds
+        push bx
+        mov bx, [CHAR_POS_Y]
+        mov di, [CHAR_POS_X]
+        and bx, 0FFF0h
+        and di, 0FFF0h
+
+        push ds
+        mov ax, [SCREEN_PTR+2]
+        mov ds, ax    
+        
+        ; need to divide CHAR_POS_X by 16 and multiply x2 --> divide by 8
+        mov si, di
+        shr si, 3
+        ; divide bx by 16 to get the row in tile
+        ; need then to multiply by 40 (20 tiles per row x 2 bytes)
+        ; since 40 = 32 + 8 --> bx / 16 * 40 = bx * 2 + bx / 2
+
+        mov ax, bx
+        shl ax, 1
+        add si, ax
+        mov ax, bx
+        shr ax, 1 
+        add si, ax
+
+        call MULTIPLYx320
+        add di, bx
+        mov bx, si
+        add bx, 320*200 + 200
+        call DISPLAY_METATILE_FAST
+
+        pop ds
+        pop bx
 
         ; move player
         mov ax, [DIRECTION]
@@ -265,7 +309,6 @@ GOTOTEST:
         mov [CHAR_POS_X], bx
         
         ; for this cycle, only cycle every 4 vsync
-        ; DETECT_VSYNC
         mov ch, cl
         and ch, 0b
         jnz @@no_cycle_tile
@@ -301,40 +344,46 @@ END_GAME:
 
 
 NOT_ENOUGH_MEMORY:
-    ; This routine is called if DOS can't allocate the requested memory    
+    ; This routine is called if DOS can't allocate the requested memory
     call RESET_SCREEN
 
     mov dx, offset ERR_MEMALLOCATE
     mov ah, 9
     int 21h
     
-    call INT9_RESET   
+    call INT9_RESET
     jmp ENDPROG
 
 MULTIPLYx320:
     ; Input BX (value to multiply)
-    ; Output BX = BX * 320  -  AX is modified
+    ; Output BX = BX * 320
     ; Note that output is 16bits so BX < 65535 / 320 --> BX < 205
+    push ax
     mov ax, bx
     shl ax, 8
     shl bx, 6
     add bx, ax
+    pop ax
     ret
-
-    ;mov ax, bx
-    ;and ax, 0fff0h
-    ;shl ax, 2
-    ;shl bx, 4
-    ;; add ax, bx
-    ;add bx, ax
-    ;ret
 
 END MAIN
 
+; max speed (no redraw of background)
+; 10s for 10 laps - each lap is 70 screen refresh
+; 1s per lap --> 70 frames per second
+
+; meta tile and up to 4
+; 10s for 10 laps - each lap is 70 screen refresh
+; 1s per lap --> 70 frames per second
+
+; 4 and up to 64 meta tiles !!!
+; still 20s for 10 laps - each lap is 70 screen refresh
+; 2s per lap --> 35 frames per second
+
 ; with screen display fast
-; 10s for 5 laps - each lap is 70 screen refresh
+; 20s for 10 laps - each lap is 70 screen refresh
 ; 2s per lap --> 35 frames per second
 
 ; non fast
-; 15s for 5 laps (70 frames per lap)
-; 23 frames per second
+; 30s for 10 laps (70 frames per lap)
+; 3s per lap --> 23 frames per second

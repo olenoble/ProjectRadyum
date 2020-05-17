@@ -92,7 +92,7 @@ GENERATE_TILE_FAST MACRO
     add di, 320 - 16
     add si, 256 - 16
     mov cl, 8
-    rep movsw               ; iteration 10      
+    rep movsw               ; iteration 10
     add di, 320 - 16
     add si, 256 - 16
     mov cl, 8
@@ -171,6 +171,8 @@ COPY_VIDEOBUFFER:
     mov di, 0
     
     push ds
+    mov ax, @DATA
+    mov ds, ax
     mov ax, [VIDEO_BUFFER]
     mov ds, ax
     xor si, si
@@ -249,7 +251,7 @@ EXTRACT_IMG:
     xor ch, ch
     xor ax, ax
     inc cx
-    @@shift_pos:    
+    @@shift_pos:
         add ax, bx
         dec cx
         jnz @@shift_pos
@@ -264,7 +266,7 @@ EXTRACT_IMG:
     inc al
     mov [IMG_COUNTER], al
     
-    popa    
+    popa
     ret
  
 
@@ -362,7 +364,7 @@ FADEOUT:
             cmp al, ah
             jb @@use_al_fadeout
             mov al, ah
-        @@use_al_fadeout:    
+        @@use_al_fadeout:
             shl al, 2
             out dx, al
 
