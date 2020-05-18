@@ -53,6 +53,8 @@ DIRECTION           dw CHARACTER_STEP
 CHAR_POS_X          dw 16
 CHAR_POS_Y          dw 64
 
+TEMP_VIDEO          dw 0h ; 0a000h
+
 ; **********************************************
 ; **********************************************
 ; ** Include files here
@@ -226,8 +228,6 @@ GOTOTEST:
     mov ax, 1
     call FADEIN
 
-    call READ_KEY_WAIT
-
     mov cl, 0
     mov dx, 0
     @@wait_for_key_tile:
@@ -244,9 +244,16 @@ GOTOTEST:
         push ds
         mov ax, [SCREEN_PTR+2]
         mov ds, ax
-        ;call DISPLAY_TILESCREEN_FAST
-        call DISPLAY_SPRITE
-        call COPY_VIDEOBUFFER
+        call DISPLAY_SPRITE_FAST
+        call DISPLAY_SPRITE_FAST
+        call DISPLAY_SPRITE_FAST
+        call DISPLAY_SPRITE_FAST
+        call DISPLAY_SPRITE_FAST
+        call DISPLAY_SPRITE_FAST
+        call DISPLAY_SPRITE_FAST
+        call DISPLAY_SPRITE_FAST
+        ;call COPY_VIDEOBUFFER
+        call COPY_VIDEOBUFFER_PARTIAL
 
         ; redraw the meta tile around the character
         pop ds
@@ -279,7 +286,13 @@ GOTOTEST:
         mov bx, si
         add bx, 320*200 + 200
         call DISPLAY_METATILE_FAST
-
+        call DISPLAY_METATILE_FAST
+        call DISPLAY_METATILE_FAST
+        call DISPLAY_METATILE_FAST
+        call DISPLAY_METATILE_FAST
+        call DISPLAY_METATILE_FAST
+        call DISPLAY_METATILE_FAST
+        call DISPLAY_METATILE_FAST
         pop ds
         pop bx
 
@@ -364,6 +377,32 @@ MULTIPLYx320:
     shl bx, 6
     add bx, ax
     pop ax
+    ret
+
+SCROLL_UP:
+    push dx
+    mov ax, [TEMP_VIDEO]
+    add ax, 320
+    mov [TEMP_VIDEO], ax
+    push ax
+    
+    mov dx, 3d4h
+    mov al, 0ch
+    out dx, al
+    inc dx
+    pop ax
+    push ax
+    mov al, ah
+    out dx, al
+
+    mov dx, 3d4h
+    mov al, 0dh
+    out dx, al
+    inc dx
+    pop ax
+    out dx, al
+
+    pop dx
     ret
 
 END MAIN

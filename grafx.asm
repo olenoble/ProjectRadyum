@@ -4,6 +4,7 @@
 ; ** Require setup.asm & lbmtool.asm
 
 MAX_LBM_FILES   equ 3
+VGA_RAM_LOCATION equ 0a000h
 
 .DATA
 ; We can allow up to 10 color maps (limit completely arbitrary - about 4kb)
@@ -120,6 +121,86 @@ GENERATE_TILE_FAST MACRO
 ENDM
 
 
+SPRITE_PIXEL MACRO
+    local @@skip_pixel
+    mov al, ds:[bx]
+    or al, al
+    jz @@skip_pixel
+    mov es:[di], al
+@@skip_pixel:
+    inc bx
+    inc di
+ENDM
+
+GENERATE_COLUMN_SPRITE_FAST MACRO
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+    SPRITE_PIXEL
+ENDM
+
+
+GENERATE_SPRITE_FAST MACRO
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+    add bx, 240
+    add di, 304
+    GENERATE_COLUMN_SPRITE_FAST
+ENDM
+
 ; ************************************************************************************
 ; ** real code is here
 .CODE  
@@ -149,8 +230,8 @@ ALLOCATE_IMG_PTR:
         dec cx
         jnz @@LoopImgPtr
     
+    ;mov bx, VGA_RAM_LOCATION
     mov [VIDEO_BUFFER], bx
-    add bx, 0fa0h
 
     pop si
     pop cx
@@ -166,7 +247,7 @@ COPY_VIDEOBUFFER:
     push di
     push es
 
-    mov ax, 0a000h
+    mov ax, VGA_RAM_LOCATION
     mov es, ax
     mov di, 0
     
@@ -177,9 +258,12 @@ COPY_VIDEOBUFFER:
     mov ds, ax
     xor si, si
     
+    cli
     DETECT_VSYNC
     mov cx, 320 * 100
     rep movsw
+    sti
+    
     pop ds
     
     pop es
@@ -190,6 +274,44 @@ COPY_VIDEOBUFFER:
     pop ax
     ret
 
+
+COPY_VIDEOBUFFER_PARTIAL:
+    ; copy the contents of the video buffer over to the video memory
+    push ax
+    push cx
+    push dx
+    push si
+    push di
+    push es
+
+    mov ax, VGA_RAM_LOCATION
+    mov es, ax
+    ;mov di, 0
+    
+    push ds
+    mov ax, @DATA
+    mov ds, ax
+    mov ax, [VIDEO_BUFFER]
+    mov ds, ax
+    ;xor si, si
+    
+    cli
+    DETECT_VSYNC
+    mov di, 64 * 320
+    mov si, di
+    mov cx, 320 * 16 / 2
+    rep movsw
+    sti
+    
+    pop ds
+    
+    pop es
+    pop di
+    pop si
+    pop dx
+    pop cx
+    pop ax
+    ret
 
 CLEAR_VIDEOBUFFER:
     ; clear the videobuffer - copy value in AX all over
@@ -627,12 +749,15 @@ DISPLAY_SPRITE:
     ; DS points to the tiles graphics segment
     ; ES points to the buffer segment
     ; BX is the sprite number (0xABh --> A in hex is the row and B in hex is the coloumn)
-    pusha
+    ;pusha
+    push ax
+    push bx
+    push cx
+    push di
 
     ; convert bx into a proper shift to sprite position
     shl bx, 4
     shl bh, 4
-    sub di, bx
 
     ; iterate over rows/columns (16 of each)
     mov ch, 16
@@ -642,18 +767,43 @@ DISPLAY_SPRITE:
             mov al, ds:[bx]
             or al, al
             jz @@skip_pixel
-            mov es:[di+bx], al
+            mov es:[di], al
         @@skip_pixel:
             inc bx
+            inc di
             dec cl
             jnz @@plot_sprite_columns
 
         add bx, 240
-        add di, 304 -240
+        add di, 304
         dec ch
         jnz @@plot_sprite_rows
     
-    popa
+    ;popa
+    pop di
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+
+DISPLAY_SPRITE_FAST:
+    ; Fast version of DISPLAY_SPRITE
+    push ax
+    push bx
+    push cx
+    push di
+
+    ; convert bx into a proper shift to sprite position
+    shl bx, 4
+    shl bh, 4
+
+    GENERATE_SPRITE_FAST
+    
+    pop di
+    pop cx
+    pop bx
+    pop ax
     ret
 
 ; ********************************************************************************************
