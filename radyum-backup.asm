@@ -229,6 +229,7 @@ GOTOTEST:
     mov ax, 1
     call FADEIN
 
+    mov cl, 0
     mov dx, 0
     @@wait_for_key_tile:
 
@@ -282,59 +283,46 @@ GOTOTEST:
         pop ds
         pop bx
 
-        call READ_KEY_NOWAIT
-        cmp al, 1h
-        jz @@exit_game_loop
-
         ; move player
-        ; scan code: down = 50h - up = 48h - left = 4bh - right = 4dh
-        cmp al, 4bh
-        jnz @@not_left
-        mov ah, -1
-        jmp @@char_move
+        mov ax, [DIRECTION]
+        inc dx
+        cmp dx, 280 / CHARACTER_STEP
+        jnz @@carry_on_moving
+        
+        xor dx, dx
+        neg ax
+        mov [DIRECTION], ax
 
-     @@not_left:
-        cmp al, 4dh
-        jnz @@not_right
-        mov ah, 1
-        jmp @@char_move
+        mov bh, ah
+        and bh, 11100000b
+        add bh, 10h
 
-    @@not_right:
-        xor ah, ah
-    
-    @@char_move:
-        mov al, ah
-        xor ah, ah
+        add bl, bh
+
+    @@carry_on_moving:
+        inc bl
+        and bl, 11110011b
+        mov [CHARSTYLE], bl
+
         mov bx, [CHAR_POS_X]
-        shl  ax, 2
         add bx, ax
         mov [CHAR_POS_X], bx
-
-        ;mov bx, [DIRECTION]
-        ;comp bx, ax
-        ;jz @@same_direction
         
+        ; for this cycle, only cycle every 4 vsync
+        mov ch, cl
+        and ch, 0b
+        jnz @@no_cycle_tile
+        mov bx, (10 * 16 - 1) * 16 * 16 + (9 * 16)
+        mov al, 1
+        call COLORCYCLE
+        call SET_PALETTE
+    @@no_cycle_tile:
+        inc cl
+        call READ_KEY_NOWAIT
+        ;or al, al
+        cmp al, 50h
+        jnz @@wait_for_key_tile
 
-     @@same_direction:
-        ;xor dx, dx
-        ;neg ax
-        ;mov [DIRECTION], ax
-
-        ;mov bh, ah
-        ;and bh, 11100000b
-        ;add bh, 10h
-
-        ;add bl, bh
-        ;inc bl
-        ;and bl, 11110011b
-        ;mov [CHARSTYLE], bl
-
-        ;mov bx, [CHAR_POS_X]
-        ;add bx, ax
-        ;mov [CHAR_POS_X], bx
-        jmp @@wait_for_key_tile
-
-@@exit_game_loop:
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEOUT
