@@ -3,6 +3,7 @@
 
 ; TO DO --> instead of refreshing the whole screen
 ; only refresh the 32*32 area around (should be able to nearly double frame by second)
+; https://wiki.osdev.org/PS/2_Keyboard
 
 ; Constants
 LOCALS @@
@@ -252,8 +253,8 @@ GOTOTEST:
         call DISPLAY_SPRITE_FAST
         call DISPLAY_SPRITE_FAST
         call DISPLAY_SPRITE_FAST
-        ;call COPY_VIDEOBUFFER
-        call COPY_VIDEOBUFFER_PARTIAL
+        call COPY_VIDEOBUFFER
+        ;call COPY_VIDEOBUFFER_PARTIAL
 
         ; redraw the meta tile around the character
         pop ds
@@ -332,8 +333,9 @@ GOTOTEST:
     @@no_cycle_tile:
         inc cl
         call READ_KEY_NOWAIT
-        or al, al
-        jz @@wait_for_key_tile
+        ;or al, al
+        cmp al, 1
+        jnz @@wait_for_key_tile
 
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
