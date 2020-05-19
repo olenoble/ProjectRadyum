@@ -4,6 +4,7 @@
 ; TO DO --> instead of refreshing the whole screen
 ; only refresh the 32*32 area around (should be able to nearly double frame by second)
 ; https://wiki.osdev.org/PS/2_Keyboard
+; Need to get the keyboard more reactive when changing direction
 
 ; Constants
 LOCALS @@
@@ -49,9 +50,9 @@ SCREENTEST2         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0306h, 8 dup (0302h), 0702h
                     db 0bh, 18 dup (05h), 0ah
 
-CHARSTYLE           db 40h
-DIRECTION           dw CHARACTER_STEP
-CHAR_POS_X          dw 16
+CHARSTYLE           db 10h
+DIRECTION           dw 0
+CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
 
 TEMP_VIDEO          dw 0h
@@ -286,35 +287,55 @@ GOTOTEST:
         cmp al, 1h
         jz @@exit_game_loop
 
+        ; ********************************************************************
         ; move player
         ; scan code: down = 50h - up = 48h - left = 4bh - right = 4dh
+        mov bl, [CHARSTYLE]
+        mov bh, bl
+        and bl, 0Fh
+        and bh, 0F0h
+
         cmp al, 4bh
         jnz @@not_left
         mov ah, -1
+        inc bl
+        and bl, 11b
+        mov bh, 30h
         jmp @@char_move
 
      @@not_left:
         cmp al, 4dh
         jnz @@not_right
         mov ah, 1
+        inc bl
+        and bl, 11b
+        mov bh, 40h
         jmp @@char_move
 
     @@not_right:
         xor ah, ah
-    
+        xor bl, bl
+
     @@char_move:
         mov al, ah
-        xor ah, ah
+        cbw
+        
+        add bl, bh
+        mov [CHARSTYLE], bl
+        
         mov bx, [CHAR_POS_X]
-        shl  ax, 2
+        shl ax, 2
         add bx, ax
         mov [CHAR_POS_X], bx
+
+        
+        
+
 
         ;mov bx, [DIRECTION]
         ;comp bx, ax
         ;jz @@same_direction
         
-
      @@same_direction:
         ;xor dx, dx
         ;neg ax

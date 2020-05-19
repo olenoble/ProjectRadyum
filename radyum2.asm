@@ -232,6 +232,9 @@ GOTOTEST:
     mov cl, 0
     mov dx, 0
     @@wait_for_key_tile:
+        push dx
+        DETECT_VSYNC
+        pop dx
 
         mov bx, [CHAR_POS_Y]
         mov di, [CHAR_POS_X]

@@ -120,11 +120,11 @@ BespokeInt9:
     ; if you want to keep calling the previous interrupt
     ;push es
     ;mov si, [OLDINT9]
-    ;mov ax, [OLDINT9 + 2]
+    ;mov ax, [OLDINT9 + 2 ]
     ;mov es, ax
     ;call es:si
     ;pop es
-    
+
     in al, 60h
     mov ah, al
     
@@ -141,7 +141,8 @@ BespokeInt9:
     
     mov [KEY_BUFFER_PTR], bx
     dec bx
-    mov [si+bx], al
+    add si, bx
+    mov [si], al
     
 @@end_int9:
     mov al, 20h
