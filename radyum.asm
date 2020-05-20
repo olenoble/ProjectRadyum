@@ -283,7 +283,11 @@ GOTOTEST:
         pop ds
         pop bx
 
-        call READ_KEY_NOWAIT
+        ;call READ_KEY_NOWAIT
+        in al, 60h
+        mov ah, al
+        and ah, 80h
+        jnz @@wait_for_key_tile
         cmp al, 1h
         jz @@exit_game_loop
 
