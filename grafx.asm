@@ -14,6 +14,7 @@ FADEWAITITR  dw 4
 IMG_COUNTER  db 0
 VIDEO_BUFFER dw 0
 TEMP_RGB     db 3 dup (0)
+BUFFER_SHIFT dw 0h
 
 ERR_BUFFER   db "Could not allocate memory for the video buffer", 13, 10, "$"
 
@@ -804,6 +805,33 @@ DISPLAY_SPRITE_FAST:
     pop cx
     pop bx
     pop ax
+    ret
+
+SCROLL_UP:
+    ; For future references - a trick to scroll up the screen using hardware techniques
+    push dx
+    mov ax, [BUFFER_SHIFT]
+    add ax, 320
+    mov [BUFFER_SHIFT], ax
+    push ax
+    
+    mov dx, 3d4h
+    mov al, 0ch
+    out dx, al
+    inc dx
+    pop ax
+    push ax
+    mov al, ah
+    out dx, al
+
+    mov dx, 3d4h
+    mov al, 0dh
+    out dx, al
+    inc dx
+    pop ax
+    out dx, al
+
+    pop dx
     ret
 
 ; ********************************************************************************************

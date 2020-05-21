@@ -84,46 +84,42 @@ READ_KEY_NOWAIT:
     ; function reads the buffer and returns pressed key (if any)
     ; routine does not wait for a key to be pressed
     ; AL contains the key code
-    
-    push si
+    cli
     push bx
     
     mov al, 0
-    
-    lea si, [KEY_BUFFER]
     mov bx, [KEY_BUFFER_PTR]
     or bx, bx
     jz @@return_no_key
     
     ; adjust the buffer
+    push si
+    mov si, offset KEY_BUFFER
     dec bx
     mov [KEY_BUFFER_PTR], bx
-    mov al, [si+bx]
+    add si, bx
+    mov al, [si]
+    pop si
 
 @@return_no_key:   
     pop bx
-    pop si
+    sti
     ret
     
 ; ***************************************************************************************
 ; ** Below is my new int9
-BespokeInt9: 
-    cli     ; stop all interrupts
-    push ax
-    push bx
-    push si    
-    push ds
-    
-    mov ax, @DATA
-    mov ds, ax
-    
-    ; if you want to keep calling the previous interrupt
+BespokeInt9:
+
+    ; if you want to keep calling the previous interrupt - add something like this
     ;push es
     ;mov si, [OLDINT9]
     ;mov ax, [OLDINT9 + 2 ]
     ;mov es, ax
     ;call es:si
     ;pop es
+
+    cli     ; stop all interrupts
+    push ax
 
     in al, 60h
     mov ah, al
@@ -132,25 +128,34 @@ BespokeInt9:
     and ah, 80h
     jnz @@end_int9
 
+    push bx
+    push si
+    push ds
+    
+    mov bx, @DATA
+    mov ds, bx
+
     ; si points to buffer and dx is the current position
-    lea si, [KEY_BUFFER]
+    mov si, offset KEY_BUFFER
     mov bx, [KEY_BUFFER_PTR]
     ; if overflow then don't bother storing it
     inc bx
-    jz @@end_int9
+    jz @@pre_end_int9
     
     mov [KEY_BUFFER_PTR], bx
     dec bx
     add si, bx
     mov [si], al
+
+@@pre_end_int9:
+    pop ds
+    pop si
+    pop bx
     
 @@end_int9:
     mov al, 20h
     out 20h, al
     
-    pop ds
-    pop si
-    pop bx
     pop ax
     sti
     iret

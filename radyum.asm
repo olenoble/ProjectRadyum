@@ -3,12 +3,11 @@
 
 ; TO DO --> instead of refreshing the whole screen
 ; only refresh the 32*32 area around (should be able to nearly double frame by second)
-; https://wiki.osdev.org/PS/2_Keyboard
-; Need to get the keyboard more reactive when changing direction
+; When releasing code - remove all c:\ (only useful for TD)
 
 ; Constants
 LOCALS @@
-CHARACTER_STEP   equ 4
+CHARACTER_STEP   equ 2
 
 .STACK 4096
 
@@ -54,8 +53,6 @@ CHARSTYLE           db 10h
 DIRECTION           dw 0
 CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
-
-TEMP_VIDEO          dw 0h
 
 ; **********************************************
 ; **********************************************
@@ -126,60 +123,11 @@ MAIN PROC
     ; start graphic mode and display
     call SWITCH_TO_320x200
     call BLACKOUT
-
-    jmp GOTOTEST
     
-    ; ********** FIRST IMAGE *****************************
-    ; Now move the image to the buffer
-    push ds
-    mov ax, [VIDEO_BUFFER]
-    mov es, ax
-    mov ax, [SCREEN_PTR]
-    mov ds, ax
-    
-    xor di, di
-    xor si, si
-    mov cx, 320 * 200
-    rep movsb
-    pop ds
-    
-    call COPY_VIDEOBUFFER
+    ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
+    ;call LOADING_SCREEN
 
-    xor ax, ax
-    call FADEIN
-
-    ; Insert here a cycle color loop
-    mov cl, 0
-    @@wait_for_key:
-        DETECT_VSYNC
-        ; for this cycle, only cycle every 4 vsync
-        mov ch, cl
-        and ch, 11b
-        jnz @@no_cycle_1
-        mov bx, (12 * 16 - 1) * 16 * 16 + (11 * 16)
-        xor al, al
-        call COLORCYCLE
-        call SET_PALETTE
-    @@no_cycle_1:
-        mov ch, cl
-        and ch, 111b
-        jnz @@no_cycle_2
-        mov bx, (8 * 16 - 1) * 16 * 16 + (7 * 16)
-        xor al, al
-        call COLORCYCLE
-        call SET_PALETTE
-    @@no_cycle_2:
-        inc cl
-        call READ_KEY_NOWAIT
-        or al, al
-        jz @@wait_for_key
-    
-    ; and fadeout - but let's have a faster one
-    mov word ptr [FADEWAITITR], 2
-    xor ax, ax
-    call FADEOUT
-
-GOTOTEST:
+    ; Clear out the video buffer + RAM before we can start
     xor ax, ax
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
@@ -230,7 +178,7 @@ GOTOTEST:
     mov ax, 1
     call FADEIN
 
-    mov dx, 0
+    ;mov dx, 0
     @@wait_for_key_tile:
 
         mov bx, [CHAR_POS_Y]
@@ -283,17 +231,25 @@ GOTOTEST:
         pop ds
         pop bx
 
-        ;call READ_KEY_NOWAIT
+        ; check keyboard
         in al, 60h
         mov ah, al
         and ah, 80h
-        jnz @@wait_for_key_tile
+        jz @@user_input
+
+        mov bl, [CHARSTYLE]
+        and bl, 0F0h
+        mov [CHARSTYLE], bl
+        jmp @@wait_for_key_tile
+
+    @@user_input:
         cmp al, 1h
         jz @@exit_game_loop
 
         ; ********************************************************************
         ; move player
         ; scan code: down = 50h - up = 48h - left = 4bh - right = 4dh
+        xor dx, dx
         mov bl, [CHARSTYLE]
         mov bh, bl
         and bl, 0Fh
@@ -301,7 +257,7 @@ GOTOTEST:
 
         cmp al, 4bh
         jnz @@not_left
-        mov ah, -1
+        mov dh, -1
         inc bl
         and bl, 11b
         mov bh, 30h
@@ -310,64 +266,60 @@ GOTOTEST:
      @@not_left:
         cmp al, 4dh
         jnz @@not_right
-        mov ah, 1
+        mov dh, 1
         inc bl
         and bl, 11b
         mov bh, 40h
         jmp @@char_move
 
     @@not_right:
-        xor ah, ah
+        cmp al, 48h
+        jnz @@not_up
+        mov dl, -1
+        inc bl
+        and bl, 11b
+        mov bh, 20h
+        jmp @@char_move
+
+    @@not_up:
+        cmp al, 50h
+        jnz @@not_down
+        mov dl, 1
+        inc bl
+        and bl, 11b
+        mov bh, 10h
+        jmp @@char_move
+
+    @@not_down:
         xor bl, bl
 
     @@char_move:
-        mov al, ah
-        cbw
-        
         add bl, bh
         mov [CHARSTYLE], bl
+
+        mov al, dh
+        cbw
         
         mov bx, [CHAR_POS_X]
-        shl ax, 2
+        shl ax, CHARACTER_STEP
         add bx, ax
         mov [CHAR_POS_X], bx
 
+        mov al, dl
+        cbw
         
+        mov bx, [CHAR_POS_Y]
+        shl ax, CHARACTER_STEP
+        add bx, ax
+        mov [CHAR_POS_Y], bx
         
-
-
-        ;mov bx, [DIRECTION]
-        ;comp bx, ax
-        ;jz @@same_direction
-        
-     @@same_direction:
-        ;xor dx, dx
-        ;neg ax
-        ;mov [DIRECTION], ax
-
-        ;mov bh, ah
-        ;and bh, 11100000b
-        ;add bh, 10h
-
-        ;add bl, bh
-        ;inc bl
-        ;and bl, 11110011b
-        ;mov [CHARSTYLE], bl
-
-        ;mov bx, [CHAR_POS_X]
-        ;add bx, ax
-        ;mov [CHAR_POS_X], bx
         jmp @@wait_for_key_tile
 
 @@exit_game_loop:
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEOUT
-
-
-TEMPEND:
     jmp END_GAME
-
 
 MAIN ENDP
 
@@ -392,6 +344,59 @@ NOT_ENOUGH_MEMORY:
     call INT9_RESET
     jmp ENDPROG
 
+
+LOADING_SCREEN:
+    ; This is the loading screen - with a nice color loop just for fun
+    push ds
+    mov ax, [VIDEO_BUFFER]
+    mov es, ax
+    mov ax, [SCREEN_PTR]
+    mov ds, ax
+    
+    xor di, di
+    xor si, si
+    mov cx, 320 * 200
+    rep movsb
+    pop ds
+    
+    call COPY_VIDEOBUFFER
+
+    xor ax, ax
+    call FADEIN
+
+    ; Insert here a cycle color loop
+    mov cl, 0
+    @@wait_for_key:
+        DETECT_VSYNC
+        ; for this cycle, only cycle every 4 vsync
+        mov ch, cl
+        and ch, 11b
+        jnz @@no_cycle_1
+        mov bx, (12 * 16 - 1) * 16 * 16 + (11 * 16)
+        xor al, al
+        call COLORCYCLE
+        call SET_PALETTE
+    @@no_cycle_1:
+        mov ch, cl
+        and ch, 111b
+        jnz @@no_cycle_2
+        mov bx, (8 * 16 - 1) * 16 * 16 + (7 * 16)
+        xor al, al
+        call COLORCYCLE
+        call SET_PALETTE
+    @@no_cycle_2:
+        inc cl
+        call READ_KEY_NOWAIT
+        or al, al
+        jz @@wait_for_key
+    
+    ; and fadeout - but let's have a faster one
+    mov word ptr [FADEWAITITR], 2
+    xor ax, ax
+    call FADEOUT
+    ret
+
+
 MULTIPLYx320:
     ; Input BX (value to multiply)
     ; Output BX = BX * 320
@@ -404,50 +409,5 @@ MULTIPLYx320:
     pop ax
     ret
 
-SCROLL_UP:
-    push dx
-    mov ax, [TEMP_VIDEO]
-    add ax, 320
-    mov [TEMP_VIDEO], ax
-    push ax
-    
-    mov dx, 3d4h
-    mov al, 0ch
-    out dx, al
-    inc dx
-    pop ax
-    push ax
-    mov al, ah
-    out dx, al
-
-    mov dx, 3d4h
-    mov al, 0dh
-    out dx, al
-    inc dx
-    pop ax
-    out dx, al
-
-    pop dx
-    ret
 
 END MAIN
-
-; max speed (no redraw of background)
-; 10s for 10 laps - each lap is 70 screen refresh
-; 1s per lap --> 70 frames per second
-
-; meta tile and up to 4
-; 10s for 10 laps - each lap is 70 screen refresh
-; 1s per lap --> 70 frames per second
-
-; 4 and up to 64 meta tiles !!!
-; still 20s for 10 laps - each lap is 70 screen refresh
-; 2s per lap --> 35 frames per second
-
-; with screen display fast
-; 20s for 10 laps - each lap is 70 screen refresh
-; 2s per lap --> 35 frames per second
-
-; non fast
-; 30s for 10 laps (70 frames per lap)
-; 3s per lap --> 23 frames per second
