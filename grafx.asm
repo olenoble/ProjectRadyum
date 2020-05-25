@@ -123,12 +123,12 @@ ENDM
 
 
 SPRITE_PIXEL MACRO
-    local @@skip_pixel
-    mov al, ds:[bx]
-    or al, al
-    jz @@skip_pixel
-    mov es:[di], al
-@@skip_pixel:
+    local @@skip_pixel  
+    mov al, ds:[bx]  ; 2
+    or al, al        ; 2
+    jz  short @@skip_pixel  ; 9 or 12 ??
+    mov es:[di], al  ; 4
+@@skip_pixel:       ; 17 or 20 in total for a pixel
     inc bx
     inc di
 ENDM
