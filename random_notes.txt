@@ -19,3 +19,9 @@
 ; 30s for 10 laps (70 frames per lap)
 ; 3s per lap --> 23 frames per second
 
+
+
+http://www.breakintoprogram.co.uk/software_development/masking-sprites
+http://www.scs.stanford.edu/09wi-cs140/pintos/specs/freevga/vga/portidx.htm
+http://www.scs.stanford.edu/17wi-cs140/pintos/specs/freevga/vga/graphreg.htm
+https://www.youtube.com/watch?v=XXBxV6-zamM
