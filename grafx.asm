@@ -123,15 +123,56 @@ ENDM
 
 
 SPRITE_PIXEL MACRO
-    local @@skip_pixel  
-    mov al, ds:[bx]  ; 2
-    or al, al        ; 2
-    jz  short @@skip_pixel  ; 9 or 12 ??
-    mov es:[di], al  ; 4
-@@skip_pixel:       ; 17 or 20 in total for a pixel
+    local @@skip_pixel
+    mov al, ds:[bx]         ; 4
+    or al, al               ; 2
+    jz short @@skip_pixel   ; 11 if jump but 3 if no jump  --> 7 in average ?
+    mov es:[di], al         ; 2 if printed - 0 otherwise   --> 1 in average ?
+@@skip_pixel:               ; 19 in total for a pixel (worst) - 14 in average
     inc bx
     inc di
 ENDM
+
+
+SPRITE_PIXEL_MASK MACRO
+    local @@skip_pixel
+    mov dl, es:[di]   ; 4
+
+    mov al, ds:[bx]   ; 4
+    or al, al         ; 2
+    lahf              ; 2
+    and ah, 01000000b ; 2
+    shr ah, 6         ; 3  - is 1 if al was zero and 0 otherwise
+    dec ah            ; 2  - now ah = 0 if al = 0 and FF otherwise
+
+    ; masking if background
+    and dl, ah        ; 2  - setting background to 0 if sprite color > 0
+    or al, dl         ; 2  - apply then the sprite
+
+    mov es:[di], al  ; 2
+@@skip_pixel:       ; 25 in total for a pixel
+    inc bx
+    inc di
+ENDM
+
+
+SPRITE_PIXEL_MASK_STORED MACRO
+    local @@skip_pixel
+    mov dl, es:[di]      ; 4
+
+    mov al, ds:[bx]      ; 4
+    mov ah, ds:[bx + 64] ; 4  - this is the mask
+
+    ; masking if background
+    and dl, ah        ; 2  - setting background to 0 if sprite color > 0
+    or al, dl         ; 2  - apply then the sprite
+
+    mov es:[di], al  ; 2
+@@skip_pixel:       ; 18 in total for a pixel
+    inc bx
+    inc di
+ENDM
+
 
 GENERATE_COLUMN_SPRITE_FAST MACRO
     SPRITE_PIXEL
@@ -792,7 +833,7 @@ DISPLAY_SPRITE_FAST:
     ; Fast version of DISPLAY_SPRITE
     push ax
     push bx
-    push cx
+    push dx
     push di
 
     ; convert bx into a proper shift to sprite position
@@ -802,7 +843,7 @@ DISPLAY_SPRITE_FAST:
     GENERATE_SPRITE_FAST
     
     pop di
-    pop cx
+    pop dx
     pop bx
     pop ax
     ret

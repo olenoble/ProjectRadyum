@@ -156,6 +156,7 @@ MAIN PROC
     @@loop_tileaddresses:
         ; to convert the tile number into a position - easy now if we use x256
         mov al, es:[si]
+        xor ah, ah
         shl ax, 4
         shl ah, 4
         stosw
@@ -232,6 +233,7 @@ MAIN PROC
         pop bx
 
         ; check keyboard
+        ;call READ_KEY_NOWAIT
         in al, 60h
         mov ah, al
         and ah, 80h
