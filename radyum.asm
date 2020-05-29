@@ -49,10 +49,6 @@ SCREENTEST2         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0306h, 8 dup (0302h), 0702h
                     db 0bh, 18 dup (05h), 0ah
 
-CHARSTYLE           db 10h
-DIRECTION           dw 0
-CHAR_POS_X          dw 160
-CHAR_POS_Y          dw 64
 
 ; **********************************************
 ; **********************************************
@@ -63,6 +59,7 @@ INCLUDE filemgmt.asm
 INCLUDE keyb.asm
 INCLUDE lbmtool.asm
 INCLUDE grafx.asm
+INCLUDE logic.asm
 
 .CODE
 
@@ -239,81 +236,14 @@ MAIN PROC
         and ah, 80h
         jz @@user_input
 
-        mov bl, [CHARSTYLE]
-        and bl, 0F0h
-        mov [CHARSTYLE], bl
+        call RESET_CHARACTER_STANCE
         jmp @@wait_for_key_tile
 
     @@user_input:
-        cmp al, 1h
+        cmp al, GAME_ESCAPE_KEY
         jz @@exit_game_loop
 
-        ; ********************************************************************
-        ; move player
-        ; scan code: down = 50h - up = 48h - left = 4bh - right = 4dh
-        xor dx, dx
-        mov bl, [CHARSTYLE]
-        mov bh, bl
-        and bl, 0Fh
-        and bh, 0F0h
-
-        cmp al, 4bh
-        jnz @@not_left
-        mov dh, -1
-        inc bl
-        and bl, 11b
-        mov bh, 30h
-        jmp @@char_move
-
-     @@not_left:
-        cmp al, 4dh
-        jnz @@not_right
-        mov dh, 1
-        inc bl
-        and bl, 11b
-        mov bh, 40h
-        jmp @@char_move
-
-    @@not_right:
-        cmp al, 48h
-        jnz @@not_up
-        mov dl, -1
-        inc bl
-        and bl, 11b
-        mov bh, 20h
-        jmp @@char_move
-
-    @@not_up:
-        cmp al, 50h
-        jnz @@not_down
-        mov dl, 1
-        inc bl
-        and bl, 11b
-        mov bh, 10h
-        jmp @@char_move
-
-    @@not_down:
-        xor bl, bl
-
-    @@char_move:
-        add bl, bh
-        mov [CHARSTYLE], bl
-
-        mov al, dh
-        cbw
-        
-        mov bx, [CHAR_POS_X]
-        shl ax, CHARACTER_STEP
-        add bx, ax
-        mov [CHAR_POS_X], bx
-
-        mov al, dl
-        cbw
-        
-        mov bx, [CHAR_POS_Y]
-        shl ax, CHARACTER_STEP
-        add bx, ax
-        mov [CHAR_POS_Y], bx
+        call UPDATE_CHARACTER_STANCE_DIRECTION
         
         jmp @@wait_for_key_tile
 
