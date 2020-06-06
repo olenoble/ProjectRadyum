@@ -59,7 +59,7 @@ INT9_RESET:
 READ_KEY_WAIT:
     ; function reads the buffer and wait for a key to be pressed
     ; AL contains the key code
-    
+
     push si
     push bx
     

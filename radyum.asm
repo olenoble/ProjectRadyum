@@ -1,13 +1,15 @@
 .MODEL SMALL
 .386
 
-; TO DO --> instead of refreshing the whole screen
-; only refresh the 32*32 area around (should be able to nearly double frame by second)
-; When releasing code - remove all c:\ (only useful for TD)
+; TO DO
+;           1. instead of refreshing the whole screen - only refresh the 32*32 area around (should be able to nearly double frame by second)
+;           2. boundary detection
+;           3. use space bar
+;           15. When releasing code - remove all c:\ (only useful for TD)
+;
 
 ; Constants
 LOCALS @@
-CHARACTER_STEP   equ 2
 
 .STACK 4096
 
@@ -27,28 +29,6 @@ DATA_PTR            dw 0
 BUFFER_PTR          dw 0
 MEM_PTR_END         dw 0
 ERR_MEMALLOCATE     db "Could not allocate memory", 13, 10, "$"
-SCREENTEST          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah
-
-SCREENTEST2         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah
-
 
 ; **********************************************
 ; **********************************************
@@ -124,6 +104,9 @@ MAIN PROC
     ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
     ;call LOADING_SCREEN
 
+    ; set up the various functions to move the character
+    call GENERATE_JUMP_POSITION
+
     ; Clear out the video buffer + RAM before we can start
     xor ax, ax
     call CLEAR_VIDEOBUFFER
@@ -138,7 +121,7 @@ MAIN PROC
     ; move the tile config to the end of buffer
     ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
     ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
-    mov si, offset SCREENTEST2
+    mov si, offset CURRENTROOM
     mov di, 320 * 200
     mov cx, 100
     rep movsw
@@ -235,7 +218,6 @@ MAIN PROC
         mov ah, al
         and ah, 80h
         jz @@user_input
-
         call RESET_CHARACTER_STANCE
         jmp @@wait_for_key_tile
 
@@ -244,7 +226,6 @@ MAIN PROC
         jz @@exit_game_loop
 
         call UPDATE_CHARACTER_STANCE_DIRECTION
-        
         jmp @@wait_for_key_tile
 
 @@exit_game_loop:
