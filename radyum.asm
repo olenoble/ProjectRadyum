@@ -3,7 +3,7 @@
 
 ; TO DO
 ;           1. instead of refreshing the whole screen - only refresh the 32*32 area around (should be able to nearly double frame by second)
-;           2. boundary detection (check with random tiles... doesn't seem to work always really well)
+;           2. boundary detection - should probably detect a whole side and not just a middle point
 ;           3. Need to rethink the keyboard management (poorly reactive) - maybe read keyboard on a timed basis ? or use a system with a single entry buffer
 ;              but that checks when the last pressed key is no longer pressed ?
 ;           15. When releasing code - remove all c:\ (only useful for TD)

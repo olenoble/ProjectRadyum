@@ -7,10 +7,10 @@ GAME_ESCAPE_KEY         equ 1
 CHARACTERSPRITE         equ CHARSTYLE
 CHARACTER_STEP          equ 4
 
-CHARACTER_BUFFER_LEFT   equ 3 * 0
-CHARACTER_BUFFER_RIGHT  equ 2 * 0
+CHARACTER_BUFFER_LEFT   equ 3 * 1
+CHARACTER_BUFFER_RIGHT  equ 2 * 1
 CHARACTER_BUFFER_UP     equ 0
-CHARACTER_BUFFER_DOWN   equ 0
+CHARACTER_BUFFER_DOWN   equ -1 * 1
 
 .DATA 
 CHARSTYLE           db 10h
@@ -119,9 +119,10 @@ MOVE_CHARACTER_LEFT:
 
 
     ; Collision detection - did we hit a wall ?
-    ; Find corresponding tile of upper left corner --> we need to have CHAR_POS_Y / 16 * 20 + CHAR_POS_X / 16
+    ; Find corresponding tile of middle left side --> we need to have (CHAR_POS_Y + 8) / 16 * 20 + CHAR_POS_X / 16
     push bx
     mov si, [CHAR_POS_Y]
+    add si, 8
     shr si, 4
     mov bx, si
     shl si, 4
@@ -167,9 +168,10 @@ MOVE_CHARACTER_RIGHT:
     mov [CHAR_POS_X], ax
 
     ; Collision detection - did we hit a wall ?
-    ; Find corresponding tile of upper right corner --> we need to have CHAR_POS_Y / 16 * 20 + (CHAR_POS_X + 16) / 16
+    ; Find corresponding tile of middle right side --> we need to have (CHAR_POS_Y + 8) / 16 * 20 + (CHAR_POS_X + 16) / 16
     push bx
     mov si, [CHAR_POS_Y]
+    add si, 8
     shr si, 4
     mov bx, si
     shl si, 4
@@ -215,7 +217,7 @@ MOVE_CHARACTER_UP:
     mov [CHAR_POS_Y], ax
 
     ; Collision detection - did we hit a wall ?
-    ; Find corresponding tile of upper left corner --> we need to have CHAR_POS_Y / 16 * 20 + (CHAR_POS_X) / 16
+    ; Find corresponding tile of upper middle side --> we need to have CHAR_POS_Y / 16 * 20 + (CHAR_POS_X + 8) / 16
     push bx
     mov si, ax
     add si, CHARACTER_BUFFER_UP
@@ -226,6 +228,7 @@ MOVE_CHARACTER_UP:
     add si, bx
 
     mov bx, [CHAR_POS_X]
+    add bx, 8
     shr bx, 4
     add si, bx
 
@@ -264,7 +267,7 @@ MOVE_CHARACTER_DOWN:
     mov [CHAR_POS_Y], ax
 
     ; Collision detection - did we hit a wall ?
-    ; Find corresponding tile of bottom left corner --> we need to have (CHAR_POS_Y + 16) / 16 * 20 + (CHAR_POS_X) / 16
+    ; Find corresponding tile of lower middle side --> we need to have (CHAR_POS_Y + 16) / 16 * 20 + (CHAR_POS_X + 8) / 16
     push bx
     mov si, ax
     add si, 16 + CHARACTER_BUFFER_DOWN
@@ -275,6 +278,7 @@ MOVE_CHARACTER_DOWN:
     add si, bx
 
     mov bx, [CHAR_POS_X]
+    add bx, 8
     shr bx, 4
     add si, bx
 
