@@ -16,6 +16,7 @@ CHARACTER_BUFFER_DOWN   equ 0
 CHARSTYLE           db 10h
 CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
+CHARACTER_MOVE      dw 0004h
 
 
 CURRENTROOM         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
@@ -28,6 +29,22 @@ CURRENTROOM         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
                     dw 0306h, 8 dup (0302h), 0702h
                     db 0bh, 18 dup (05h), 0ah
+
+TARGETROOM          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    db 0bh, 18 dup (05h), 0ah
+
+                    ; flags for the room 
+                    ;   - bit 0 is set if room is changeable
+                    ;   - bit 1 is set if room is completed
+ROOM_FLAGS          db 01b
 
                     ; contains all the position to be called
 JUMP_POS            dw 256 dup (0)
@@ -69,6 +86,12 @@ GENERATE_JUMP_POSITION:
 RESET_CHARACTER_STANCE:
     ; Reset the character pose if no keys are being pressed
     ; BL is modified
+    
+    ; problem here is that - we read the keyboard too often and it resets to zero too quickly
+    ;xor ax, ax
+    mov ax, CHARACTER_STEP
+    mov [CHARACTER_MOVE], ax
+
     mov al, [CHARACTERSPRITE]
     and al, 0F0h
     mov [CHARACTERSPRITE], al
@@ -91,7 +114,7 @@ MOVE_CHARACTER_LEFT:
 
     ; Now move the position
     mov ax, [CHAR_POS_X]
-    sub ax, CHARACTER_STEP
+    sub ax, [CHARACTER_MOVE]
     mov [CHAR_POS_X], ax
 
 
@@ -109,8 +132,8 @@ MOVE_CHARACTER_LEFT:
     shr ax, 4
     add si, ax
 
-    mov bx, [si + offset CURRENTROOM]
-    and bx, 11111100b
+    mov bl, [si + offset CURRENTROOM]
+    and bl, 11111100b
     jz @@all_good
     shl ax, 4
     add ax, 16 - CHARACTER_BUFFER_LEFT
@@ -140,7 +163,7 @@ MOVE_CHARACTER_RIGHT:
 
     ; Now move the position
     mov ax, [CHAR_POS_X]
-    add ax, CHARACTER_STEP
+    add ax, [CHARACTER_MOVE]
     mov [CHAR_POS_X], ax
 
     ; Collision detection - did we hit a wall ?
@@ -157,8 +180,8 @@ MOVE_CHARACTER_RIGHT:
     shr ax, 4
     add si, ax
 
-    mov bx, [si + offset CURRENTROOM]
-    and bx, 11111100b
+    mov bl, [si + offset CURRENTROOM]
+    and bl, 11111100b
     jz @@all_good
     shl ax, 4
     sub ax, 16 - CHARACTER_BUFFER_RIGHT
@@ -188,7 +211,7 @@ MOVE_CHARACTER_UP:
 
     ; Now move the position
     mov ax, [CHAR_POS_Y]
-    sub ax, CHARACTER_STEP
+    sub ax, [CHARACTER_MOVE]
     mov [CHAR_POS_Y], ax
 
     ; Collision detection - did we hit a wall ?
@@ -206,8 +229,8 @@ MOVE_CHARACTER_UP:
     shr bx, 4
     add si, bx
 
-    mov bx, [si + offset CURRENTROOM]
-    and bx, 11111100b
+    mov bl, [si + offset CURRENTROOM]
+    and bl, 11111100b
     jz @@all_good
     and ax, 0FFF0h
     add ax, 16 - CHARACTER_BUFFER_UP
@@ -237,7 +260,7 @@ MOVE_CHARACTER_DOWN:
 
     ; Now move the position
     mov ax, [CHAR_POS_Y]
-    add ax, CHARACTER_STEP
+    add ax, [CHARACTER_MOVE]
     mov [CHAR_POS_Y], ax
 
     ; Collision detection - did we hit a wall ?
@@ -255,8 +278,8 @@ MOVE_CHARACTER_DOWN:
     shr bx, 4
     add si, bx
 
-    mov bx, [si + offset CURRENTROOM]
-    and bx, 11111100b
+    mov bl, [si + offset CURRENTROOM]
+    and bl, 11111100b
     jz @@all_good
     add ax, 16
     and ax, 0FFF0h
@@ -272,8 +295,38 @@ MOVE_CHARACTER_DOWN:
 
 
 PRESS_SPACE:
-    pop si
-    pop ax
+    ; check the room can still change
+    mov al, [ROOM_FLAGS]
+    and al, 1b
+    jz @@done_press_space
+
+    ; get position - roughly around where the waist is
+    mov si, [CHAR_POS_Y]
+    add si, 11          ; move to waist
+    shr si, 4
+    mov ax, si
+    shl si, 4
+    shl ax, 2
+    add si, ax
+
+    mov ax, [CHAR_POS_X]
+    add ax, 8
+    shr ax, 4
+    add si, ax
+
+    ; now get tile
+    mov al, [si + offset CURRENTROOM]
+    xor al, 1b
+    mov [si + offset CURRENTROOM], al
+    call STORE_ROOM_VIDEO_RAM
+
+    ; we need know to confirm if the room matches the target
+    call VALIDATE_ROOM
+
+    @@done_press_space:
+        pop si
+        pop ax
+
     ret
 
 
@@ -287,6 +340,10 @@ UPDATE_CHARACTER_STANCE_DIRECTION:
 
     push ax
     push si
+
+    mov si, [CHARACTER_MOVE]
+    inc si
+    mov [CHARACTER_MOVE], si
 
     xor ah, ah
     mov si, offset JUMP_POS
@@ -302,135 +359,82 @@ UPDATE_CHARACTER_STANCE_DIRECTION:
     ret
 
 
+STORE_ROOM_VIDEO_RAM:
+    pusha
+    mov ax, [VIDEO_BUFFER]
+    mov es, ax
 
-UPDATE_CHARACTER_STANCE_DIRECTION_old:
-    ; ********************************************************************
-    ; Move player - Using key pressed passed in AL
-    ; scan code: down = 50h - up = 48h - left = 4bh - right = 4dh
-    ; space 39h ...
-    ;left  01001011
-    ;right 01001101
-    ;up    01001000
-    ;down  01010000
-    push ax
-    push bx
+    ; move the tile config to the end of buffer
+    ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
+    ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
+    mov si, offset CURRENTROOM
+    mov di, 320 * 200
+    mov cx, 100
+    rep movsw
+
+    ; then we can add the corresponding position in the image for each tile
+    ; this takes an additional 400 bytes (since address is a word)
+    push ds
+    mov ds, ax
+    mov si, 320*200
+    mov di, 320*200+200
+    mov cx, 200
+    @@loop_tileaddresses:
+        ; to convert the tile number into a position - easy now if we use x256
+        mov al, es:[si]
+        xor ah, ah
+        shl ax, 4
+        shl ah, 4
+        stosw
+        inc si
+        dec cx
+        jnz @@loop_tileaddresses
+
+    pop ds
+    popa
+    ret
+
+
+VALIDATE_ROOM:
+    ; Check whether the current room matches the target room
+    ; ignore the boundaries - we assume all doors are on boundaries (whether they are open is not a target)
+    ; so we start on the second tile of the first row
+    ; AX and SI will be changed
+    push es
     push cx
-    push dx
+    push di
 
-    ; Check direction (need to improve on this a bit)
-    xor dx, dx
-    mov bl, [CHARACTERSPRITE]
-    mov bh, bl
-    and bh, 0F0h
-    and bl, 0Fh
+    mov si, offset CURRENTROOM
+    add si, 21
+    mov di, offset TARGETROOM
+    add di, 21
 
-    cmp al, 4bh
-    jnz @@not_left
-    mov dh, -1
-    inc bl
-    and bl, 11b
-    mov bh, 30h
-    jmp @@char_move
+    push ds
+    pop es
+    
+    ; checking each row and adding the remainder of cx (should be zero after each line)
+    ; there are 9 words in each row if we ignore the boundaries
+    mov al, 8
+    @@check_row:
+        mov cx, 9
+        repe cmpsw
+        ; if cx is not zero, a difference was found somewhere
+        or cx, cx        
+        jnz @@end_check
 
-    @@not_left:
-    cmp al, 4dh
-    jnz @@not_right
-    mov dh, 1
-    inc bl
-    and bl, 11b
-    mov bh, 40h
-    jmp @@char_move
+        ; if zero, let's move to the next row
+        ; si and di should be on the boundary of the previous row
+        add si, 2
+        add di, 2
+        dec al
+        jnz @@check_row
 
-@@not_right:
-    cmp al, 48h
-    jnz @@not_up
-    mov dl, -1
-    inc bl
-    and bl, 11b
-    mov bh, 20h
-    jmp @@char_move
+    mov al, 10b
+    mov [ROOM_FLAGS], al
+    
+    @@end_check:
+        pop di
+        pop cx
+        pop es
 
-@@not_up:
-    cmp al, 50h
-    jnz @@not_down
-    mov dl, 1
-    inc bl
-    and bl, 11b
-    mov bh, 10h
-    jmp @@char_move
-
-@@not_down:
-    xor bl, bl
-
-@@char_move:
-    add bl, bh
-    mov [CHARSTYLE], bl
-
-    ; Retrieve current position
-    mov bx, [CHAR_POS_X]
-    mov cx, [CHAR_POS_Y]
-
-    ; Update X move (move stored in DH)
-    mov al, dh
-    cbw
-    shl ax, CHARACTER_STEP
-    add bx, ax
-
-    ; Check if we hit a wall
-    ; to find corresponding tile of upper left corner, we need to have CHAR_POS_Y / 16 * 20 + CHAR_POS_X / 16
-    ; 20 / 16 = 1 + 1/4 (2 shift right + add original value)
-    mov si, cx
-    shr si, 2
-    add si, cx
-
-    mov di, bx
-    ; if we moved right, we need to check the right corner
-    cmp ax, 0
-    jl @@moving_left
-    add di, 16 - 6
-@@moving_left:
-    add di, 5
-    shr di, 4
-    add si, di
-
-    mov di, [si + offset CURRENTROOM]
-    and di, 11111100b
-    jz @@all_good
-    sub bx, ax
-
-@@all_good:
-    ; Update Y move
-    mov al, dl
-    cbw
-    shl ax, CHARACTER_STEP
-    add cx, ax
-
-    ; Check if we hit a wall
-    mov si, cx
-    cmp ax, 0
-    jl @@moving_up
-    add si, 16
-@@moving_up:
-    shr si, 2
-    add si, cx
-
-    ;mov di, bx
-    ;shr di, 4
-    ;add si, di
-
-    ;mov di, [si + offset CURRENTROOM]
-    ;and di, 11111100b
-    ;jz @@all_good2
-    ;sub cx, ax
-
-@@all_good2:
-
-    mov [CHAR_POS_X], bx
-    mov [CHAR_POS_Y], cx
-
-@@end_actions:
-    pop dx
-    pop cx
-    pop bx
-    pop ax
     ret

@@ -3,14 +3,18 @@
 
 ; TO DO
 ;           1. instead of refreshing the whole screen - only refresh the 32*32 area around (should be able to nearly double frame by second)
-;           2. boundary detection
-;           3. use space bar
+;           2. boundary detection (check with random tiles... doesn't seem to work always really well)
+;           3. Need to rethink the keyboard management (poorly reactive) - maybe read keyboard on a timed basis ? or use a system with a single entry buffer
+;              but that checks when the last pressed key is no longer pressed ?
 ;           15. When releasing code - remove all c:\ (only useful for TD)
 ;
 
 ; Constants
 LOCALS @@
 
+; **********************************************
+; **********************************************
+; ** STACK + DATA here
 .STACK 4096
 
 .DATA
@@ -30,8 +34,12 @@ BUFFER_PTR          dw 0
 MEM_PTR_END         dw 0
 ERR_MEMALLOCATE     db "Could not allocate memory", 13, 10, "$"
 
+
 ; **********************************************
 ; **********************************************
+; ** CODE here
+.CODE
+
 ; ** Include files here
 INCLUDE setup.asm
 INCLUDE intro.asm
@@ -40,8 +48,6 @@ INCLUDE keyb.asm
 INCLUDE lbmtool.asm
 INCLUDE grafx.asm
 INCLUDE logic.asm
-
-.CODE
 
 ; **********************************************
 ; **********************************************
@@ -115,36 +121,7 @@ MAIN PROC
     ; *************************************************************************************************
     ; *************************************************************************************************
     ; generate a dummy screen
-    mov ax, [VIDEO_BUFFER]
-    mov es, ax
-
-    ; move the tile config to the end of buffer
-    ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
-    ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
-    mov si, offset CURRENTROOM
-    mov di, 320 * 200
-    mov cx, 100
-    rep movsw
-
-    ; then we can add the corresponding position in the image for each tile
-    ; this takes an additional 400 bytes (since address is a word)
-    push ds
-    mov ds, ax
-    mov si, 320*200
-    mov di, 320*200+200
-    mov cx, 200
-    @@loop_tileaddresses:
-        ; to convert the tile number into a position - easy now if we use x256
-        mov al, es:[si]
-        xor ah, ah
-        shl ax, 4
-        shl ah, 4
-        stosw
-        inc si
-        dec cx
-        jnz @@loop_tileaddresses
-
-    pop ds
+    call STORE_ROOM_VIDEO_RAM
 
     ; test METATILE
     push ds
@@ -152,15 +129,24 @@ MAIN PROC
     mov ds, ax
     call DISPLAY_TILESCREEN_FAST
     pop ds
-    call COPY_VIDEOBUFFER
 
     ; a little cycle of colors here for a classy effect
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEIN
 
-    ;mov dx, 0
     @@wait_for_key_tile:
+
+        ; color cycle if room is completed
+        mov al, [ROOM_FLAGS]
+        and al, 10b
+        jz @@uncompleted_room
+        mov ax, 1
+        mov bx, (10 * 16 - 1) * 16 * 16 + (9 * 16)
+        call COLORCYCLE
+        call SET_PALETTE
+
+    @@uncompleted_room:
 
         mov bx, [CHAR_POS_Y]
         mov di, [CHAR_POS_X]
@@ -213,11 +199,12 @@ MAIN PROC
         pop bx
 
         ; check keyboard
-        ;call READ_KEY_NOWAIT
-        in al, 60h
-        mov ah, al
-        and ah, 80h
-        jz @@user_input
+        call READ_KEY_NOWAIT
+        ;in al, 60h
+        ;mov ah, al
+        ;and ah, 80h
+        or al, al
+        jnz @@user_input
         call RESET_CHARACTER_STANCE
         jmp @@wait_for_key_tile
 

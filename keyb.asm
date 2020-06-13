@@ -83,29 +83,24 @@ READ_KEY_WAIT:
 READ_KEY_NOWAIT:
     ; function reads the buffer and returns pressed key (if any)
     ; routine does not wait for a key to be pressed
-    ; AL contains the key code
-    cli
-    push bx
-    
-    mov al, 0
-    mov bx, [KEY_BUFFER_PTR]
-    or bx, bx
+    ; AL contains the key code - AH is also modified
+    mov ax, [KEY_BUFFER_PTR]
+    or ax, ax
     jz @@return_no_key
     
     ; adjust the buffer
     push si
     mov si, offset KEY_BUFFER
-    dec bx
-    mov [KEY_BUFFER_PTR], bx
-    add si, bx
+    dec ax
+    mov [KEY_BUFFER_PTR], ax
+    add si, ax
     mov al, [si]
     pop si
 
-@@return_no_key:   
-    pop bx
-    sti
+    @@return_no_key:
     ret
-    
+
+
 ; ***************************************************************************************
 ; ** Below is my new int9
 BespokeInt9:
@@ -123,7 +118,7 @@ BespokeInt9:
 
     in al, 60h
     mov ah, al
-    
+
     ; is it an up key (which we don't care about)
     and ah, 80h
     jnz @@end_int9
@@ -147,14 +142,14 @@ BespokeInt9:
     add si, bx
     mov [si], al
 
-@@pre_end_int9:
-    pop ds
-    pop si
-    pop bx
-    
-@@end_int9:
-    mov al, 20h
-    out 20h, al
+    @@pre_end_int9:
+        pop ds
+        pop si
+        pop bx
+        
+    @@end_int9:
+        mov al, 20h
+        out 20h, al
     
     pop ax
     sti
