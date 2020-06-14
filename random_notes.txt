@@ -1,3 +1,26 @@
+; Note that doors can be opened by unlocking a room or by using a code
+; Assume no more that 4 doors per room
+
+; Notes on the mapping file. For each room:
+; 1) store  map start (20x10)
+; 2) map target (20x10)  --> since edges are not used to compare, the door position should hold an action number
+; --> 20x10x2 = 400 bytes per room (up to 65535 / 400) - over 160 rooms in one segment - 128 max should be enough!!!! (51kb)
+
+; Info/text/passcode (separate file ??). For each room:
+; 1) passcode to be generated (if relevant) - letter + 3 digits - 4bytes
+; 2) passcode position (xy) 1 byte  
+; 2) text to display (bottom-right corner - 40x160 - maybe use 8x8 borders --> 24 x 144; using 8x8 characters 3 x 18 = 54 bytes)
+; 3) a list of action number information:
+;           a) the room it leads to (1 byte) + higher bit should say whether room is unlocked by solving the room or...
+;           b) passcode to unclock - 4bytes
+;           c) passcode requested (upon question, e.g. D31 / S31 / G24)        (3 bytes)
+
+; --> 67 bytes per room (8.5kb for 128 rooms)
+; Need to store in the code the list of solved rooms
+
+
+
+
 ;;;;; SPEED DRAWING SPRITES + BACKGROUND
 ; max speed (no redraw of background)
 ; 10s for 10 laps - each lap is 70 screen refresh
@@ -21,7 +44,7 @@
 
 
 
-http://www.breakintoprogram.co.uk/software_development/masking-sprites
-http://www.scs.stanford.edu/09wi-cs140/pintos/specs/freevga/vga/portidx.htm
-http://www.scs.stanford.edu/17wi-cs140/pintos/specs/freevga/vga/graphreg.htm
-https://www.youtube.com/watch?v=XXBxV6-zamM
+; http://www.breakintoprogram.co.uk/software_development/masking-sprites
+; http://www.scs.stanford.edu/09wi-cs140/pintos/specs/freevga/vga/portidx.htm
+; http://www.scs.stanford.edu/17wi-cs140/pintos/specs/freevga/vga/graphreg.htm
+; https://www.youtube.com/watch?v=XXBxV6-zamM
