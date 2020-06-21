@@ -2,6 +2,8 @@
 .386
 
 ; TO DO
+;           1. To add a blank character and _
+;           2. While switching rooms, only fadein/fadeout the play area
 ;           1. instead of refreshing the whole screen - only refresh the 32*32 area around (should be able to nearly double frame by second)
 ;           2. boundary detection - should probably detect a whole side and not just a middle point
 ;           3. Need to rethink the keyboard management (poorly reactive) - maybe read keyboard on a timed basis ? or use a system with a single entry buffer
@@ -19,7 +21,7 @@ LOCALS @@
 
 .DATA
 LOADINGSCR  db "c:\INTRO.LBM", 0
-TILESCR     db "c:\GRIDT2.LBM", 0
+TILESCR     db "c:\GRIDT4.LBM", 0
 
 FILEINFO    dw 4 dup (0)
 
@@ -120,13 +122,17 @@ MAIN PROC
 
     ; *************************************************************************************************
     ; *************************************************************************************************
-    ; generate a dummy screen
-    call STORE_ROOM_VIDEO_RAM
+    ; ** Room action
 
-    ; test METATILE
-    push ds
+    ; Store room data in the video buffer (past 64000 first bytes)
+    call STORE_ROOM_VIDEO_RAM    
+
+    ; Generate clue area and screen
     mov ax, [SCREEN_PTR+2]
-    mov ds, ax
+    call GENERATE_CLUEAREA
+    
+    push ds
+    mov ds, ax    
     call DISPLAY_TILESCREEN_FAST
     pop ds
 

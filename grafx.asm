@@ -875,6 +875,56 @@ SCROLL_UP:
     pop dx
     ret
 
+
+DISPLAY_SMALL_SPRITE:
+    ; Same as DISPLAY_SPRITE for a 8x8 sprite
+    ; DS points to the tiles graphics segment
+    ; ES points to the buffer segment
+    ; BL is the sprite number (0xABh --> A in hex is the row and B in hex is the coloumn)
+    ; DI is the position
+    push ax
+    push bx
+    push cx
+    push di
+
+    ; convert bx into a proper shift to sprite position
+    ; BH must be multiplied by 256 * 8
+    ; BL must be multiplied by 8
+    xor bh, bh
+    shl bx, 4
+    shl bh, 3
+    shr bl, 1
+
+    ; add the shift to start where the 8x8 starts
+    add bx, 256 * 16 * 11
+
+    ; iterate over rows/columns (16 of each)
+    mov ch, 8
+    @@plot_sprite_rows:
+        mov cl, 8
+        @@plot_sprite_columns:
+            mov al, ds:[bx]
+            or al, al
+            jz @@skip_pixel
+            mov es:[di], al
+        @@skip_pixel:
+            inc bx
+            inc di
+            dec cl
+            jnz @@plot_sprite_columns
+
+        add bx, 256 - 8
+        add di, 320 - 8
+        dec ch
+        jnz @@plot_sprite_rows
+    
+    pop di
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+
 ; ********************************************************************************************
 ; ********************************************************************************************
 ; ** Various functions

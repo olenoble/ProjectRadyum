@@ -18,6 +18,18 @@ CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
 CHARACTER_MOVE      dw 0004h
 
+CLUEAREA            db 0ah, 25 dup (0dh), 1ah
+                    db 0bh, 25 dup (2ah), 1bh
+                    db 0bh, 25 dup (2ah), 1bh
+                    db 0bh, 25 dup (2ah), 1bh
+                    db 0ch, 25 dup (1dh), 1ch
+
+PASSCODEAREA        db 0ah, 25 dup (0dh), 1ah
+                    db 0bh, 25 dup (2ah), 1bh
+                    db 0bh, 25 dup (2ah), 1bh
+                    db 0bh, 25 dup (2ah), 1bh
+                    db 0ch, 25 dup (1dh), 1ch
+
 
 CURRENTROOM         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0206h, 8 dup (0203h), 0703h
@@ -441,4 +453,50 @@ VALIDATE_ROOM:
         pop cx
         pop es
 
+    ret
+
+GENERATE_CLUEAREA:
+    ; Generate the clue area (bottom right)
+    ; This is typically a one-off everytime we enter a room - so not time critical
+    ; Similar to the room, we store (temporarily) the screen after the video buffer
+    ; There is 1535 bytes left (and we only need up to 40*5=200 tiles -> 400 bytes)
+;    pusha
+;    push ds
+
+    mov bx, [VIDEO_BUFFER]
+    mov es, bx
+
+    ; move the tile config to the end of buffer
+    ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
+    ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
+    mov si, offset CLUEAREA
+    mov di, 320 * 200 + 600
+    mov cx, 27 * 5
+    rep movsw
+
+    ; then we can
+    ; this time, no need to store it. We can simply generate the sprite in the video buffer
+    mov ds, ax
+    mov si, 320 * 200 + 600
+    mov di, 320 * 160 + 104
+
+    mov cl, 5
+    @@loop_sprite8_cols:
+        mov ch, 27
+        @@loop_sprite8_rows:
+            mov bl, es:[si]
+            call DISPLAY_SMALL_SPRITE
+            inc si
+            add di, 8
+            dec ch
+            jnz @@loop_sprite8_rows
+        add di, 256 - 27 * 8
+        dec cl
+        jnz @@loop_sprite8_cols
+
+    pop ds
+    popa
+    ret
+
+RESET_CLUEAREA:
     ret

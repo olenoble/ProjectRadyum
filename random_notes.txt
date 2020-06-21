@@ -18,7 +18,8 @@
 ; --> 67 bytes per room (8.5kb for 128 rooms)
 ; Need to store in the code the list of solved rooms
 
-
+; when leaving the game, screens can be saved (with current position and all cleared rooms +passwords)
+; use a basic batch files that allows user to switch - will simply copy / erase files and replace with 
 
 
 ;;;;; SPEED DRAWING SPRITES + BACKGROUND
