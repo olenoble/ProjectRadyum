@@ -18,18 +18,18 @@ CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
 CHARACTER_MOVE      dw 0004h
 
-CLUEAREA            db 0ah, 25 dup (0dh), 1ah
-                    db 0bh, 25 dup (2ah), 1bh
-                    db 0bh, 25 dup (2ah), 1bh
-                    db 0bh, 25 dup (2ah), 1bh
-                    db 0ch, 25 dup (1dh), 1ch
+                    ; db 1ah, 1 dup (1dh), 1eh, 22h, 2bh, 34h, 24h, 1eh, 18 dup (1dh), 3ah
+CLUEAREA            db 1ah, 25 dup (1dh), 3ah
+                    db 1bh, 25 dup (1eh), 3bh
+                    db 1bh, 25 dup (1eh), 3bh
+                    db 1bh, 25 dup (1eh), 3bh
+                    db 1ch, 25 dup (3dh), 3ch
 
-PASSCODEAREA        db 0ah, 25 dup (0dh), 1ah
-                    db 0bh, 25 dup (2ah), 1bh
-                    db 0bh, 25 dup (2ah), 1bh
-                    db 0bh, 25 dup (2ah), 1bh
-                    db 0ch, 25 dup (1dh), 1ch
-
+PASSCODEAREA        db 1ah, 11 dup (1dh), 3ah
+                    db 1bh, 11 dup (1eh), 3bh
+                    db 1bh, 11 dup (1eh), 3bh
+                    db 1bh, 11 dup (1eh), 3bh
+                    db 1ch, 11 dup (3dh), 3ch
 
 CURRENTROOM         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0206h, 8 dup (0203h), 0703h
@@ -455,17 +455,130 @@ VALIDATE_ROOM:
 
     ret
 
+
 GENERATE_CLUEAREA:
     ; Generate the clue area (bottom right)
+    ; AX contains the tileset reference
+    ; CL contains length of area (in multiples of 8)
+
+    push si
+    push dx
+    push cx
+
+    mov si, offset CLUEAREA
+    mov dx, 104
+    mov cl, 27
+    call GENERATE_AREA
+
+    pop cx
+    pop dx
+    pop si
+    ret
+
+
+GENERATE_PASSWORDAREA:
+    ; Generate the password area (bottom left)
+    ; AX contains the tileset reference
+    ; CL contains length of area (in multiples of 8)
+
+    push si
+    push dx
+    push cx
+
+    mov si, offset PASSCODEAREA
+    mov dx, 0
+    mov cl, 13
+    call GENERATE_AREA
+
+    pop cx
+    pop dx
+    pop si
+    ret
+
+
+GENERATE_AREA:
+    ; Generate one of the areas, either password or clue (bottom left or right)
+    ; SI must point to the tile reference in DS
+    ; AX contains the tileset reference
+    ; DX contains the horizontal shift reference
+
     ; This is typically a one-off everytime we enter a room - so not time critical
     ; Similar to the room, we store (temporarily) the screen after the video buffer
     ; There is 1535 bytes left (and we only need up to 40*5=200 tiles -> 400 bytes)
-;    pusha
-;    push ds
+    push ax
+    push bx
+    push cx
+    push si
+    push di
+    push ds
 
     mov bx, [VIDEO_BUFFER]
     mov es, bx
 
+    mov bh, cl
+
+    ; move the tile config to the end of buffer
+    ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
+    ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
+    mov di, 320 * 200 + 600
+    ; I need to multiply cl by 5 (since cl is at most 40 - it can be done on 8bits)
+    mov ch, cl
+    shl cl, 2
+    add cl, ch
+    xor ch, ch
+    ;mov cx, 27 * 5
+    rep movsw
+
+    ; then we can
+    ; this time, no need to store it. We can simply generate the sprite in the video buffer
+    mov ds, ax
+    mov si, 320 * 200 + 600
+    mov di, 320 * 160
+    add di, dx
+
+    ; precalculate the return after each row
+    mov ax, 320
+    mov cl, bh
+    xor ch, ch
+    sub ax, cx
+    shl ax, 3
+
+    mov cl, 5
+    @@loop_sprite8_cols:
+        mov ch, bh
+        @@loop_sprite8_rows:
+            mov bl, es:[si]
+            call DISPLAY_SMALL_SPRITE
+            inc si
+            add di, 8
+            dec ch
+            jnz @@loop_sprite8_rows
+
+        add di, ax
+        dec cl
+        jnz @@loop_sprite8_cols
+
+    pop ds
+    pop di
+    pop si
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+
+GENERATE_CLUEAREA_old:
+    ; Generate the clue area (bottom right)
+    ; This is typically a one-off everytime we enter a room - so not time critical
+    ; Similar to the room, we store (temporarily) the screen after the video buffer
+    ; There is 1535 bytes left (and we only need up to 40*5=200 tiles -> 400 bytes)
+    pusha
+    push ds
+
+    mov bx, [VIDEO_BUFFER]
+    mov es, bx
+
+    
     ; move the tile config to the end of buffer
     ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
     ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
@@ -490,13 +603,10 @@ GENERATE_CLUEAREA:
             add di, 8
             dec ch
             jnz @@loop_sprite8_rows
-        add di, 256 - 27 * 8
+        add di, 320 * 8 - 27 * 8
         dec cl
         jnz @@loop_sprite8_cols
 
     pop ds
     popa
-    ret
-
-RESET_CLUEAREA:
     ret

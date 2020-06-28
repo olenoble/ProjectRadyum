@@ -48,4 +48,3 @@
 ; http://www.breakintoprogram.co.uk/software_development/masking-sprites
 ; http://www.scs.stanford.edu/09wi-cs140/pintos/specs/freevga/vga/portidx.htm
 ; http://www.scs.stanford.edu/17wi-cs140/pintos/specs/freevga/vga/graphreg.htm
-; https://www.youtube.com/watch?v=XXBxV6-zamM

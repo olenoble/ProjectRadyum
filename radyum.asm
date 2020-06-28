@@ -3,10 +3,11 @@
 
 ; TO DO
 ;           1. To add a blank character and _
-;           2. While switching rooms, only fadein/fadeout the play area
-;           1. instead of refreshing the whole screen - only refresh the 32*32 area around (should be able to nearly double frame by second)
-;           2. boundary detection - should probably detect a whole side and not just a middle point
-;           3. Need to rethink the keyboard management (poorly reactive) - maybe read keyboard on a timed basis ? or use a system with a single entry buffer
+;           2. Why is there no fade in when getting in the first room ??
+;           3. While switching rooms, only fadein/fadeout the play area
+;           4. instead of refreshing the whole screen - only refresh the 32*32 area around (should be able to nearly double frame by second)
+;           5. boundary detection - should probably detect a whole side and not just a middle point
+;           6. Need to rethink the keyboard management (poorly reactive) - maybe read keyboard on a timed basis ? or use a system with a single entry buffer
 ;              but that checks when the last pressed key is no longer pressed ?
 ;           15. When releasing code - remove all c:\ (only useful for TD)
 ;
@@ -130,16 +131,18 @@ MAIN PROC
     ; Generate clue area and screen
     mov ax, [SCREEN_PTR+2]
     call GENERATE_CLUEAREA
+    call GENERATE_PASSWORDAREA
     
     push ds
     mov ds, ax    
     call DISPLAY_TILESCREEN_FAST
     pop ds
 
-    ; a little cycle of colors here for a classy effect
-    mov word ptr [FADEWAITITR], 4
+    ; Fade in is screwed here - check why
+    ;mov word ptr [FADEWAITITR], 4
     mov ax, 1
-    call FADEIN
+    ;call FADEIN
+    call SET_PALETTE
 
     @@wait_for_key_tile:
 
