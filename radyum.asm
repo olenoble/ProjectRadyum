@@ -11,7 +11,7 @@ LOCALS @@
 
 .DATA
 LOADINGSCR  db "c:\INTRO.LBM", 0
-TILESCR     db "c:\GRIDT5.LBM", 0
+TILESCR     db "c:\GRIDT6.LBM", 0
 
 FILEINFO    dw 4 dup (0)
 

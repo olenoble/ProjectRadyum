@@ -73,12 +73,14 @@ TARGETROOM          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     ; flags for the room 
                     ;   - bit 0 is set if room is changeable
                     ;   - bit 1 is set if room is completed
-ROOM_FLAGS          db 01b
+                    ;   - bit 2 is set if room generates a password upon solving
+ROOM_FLAGS          db 001b
 
                     ; contains all the position to be called
 JUMP_POS            dw 256 dup (0)
 
-ROOM_CLUE           db "Il vous manque une case  Essayez Espace,1239Z", "$"
+ROOM_CLUE           db "Il vous manque une case  Essayez Espace", "$"
+ROOM_PASSWORD       db 3 dup (0)
 
                     ; Store the letter mappings - starting from space (20h = 32) - see http://www.asciitable.com/
                     ; Numbers start at 48 - upper case letters at 65 and lower case at 97

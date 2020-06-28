@@ -2,6 +2,7 @@
 
 TO DO<br><br>
 <ol>
+<li>Adding R to restart the room (unless completed)<br>
 <li>Why is there no fade in when getting in the first room ??<br>
 <li>While switching rooms, only fadein/fadeout the play area<br>
 <li>Instead of refreshing the whole screen - only refresh the 32*32 area around (should be able to nearly double frame by second)<br>

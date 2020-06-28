@@ -7,15 +7,17 @@
 ; --> 20x10x2 = 400 bytes per room (up to 65535 / 400) - over 160 rooms in one segment - 128 max should be enough!!!! (51kb)
 
 ; Info/text/passcode (separate file ??). For each room:
-; 1) passcode to be generated (if relevant) - letter + 3 digits - 4bytes
+; 0) byte info --> e.g. changeable room, password generation, etc... - 1 byte
+; 1) passcode to be generated (if relevant) - letter + 2 digits - 3bytes
 ; 2) passcode position (xy) 1 byte  
-; 2) text to display (bottom-right corner - 40x160 - maybe use 8x8 borders --> 24 x 144; using 8x8 characters 3 x 18 = 54 bytes)
+; 2) text to display (bottom-right corner - 40x160 - maybe use 8x8 borders --> 25 * 3; using 8x8 characters = 75 bytes)
 ; 3) a list of action number information:
 ;           a) the room it leads to (1 byte) + higher bit should say whether room is unlocked by solving the room or...
-;           b) passcode to unclock - 4bytes
-;           c) passcode requested (upon question, e.g. D31 / S31 / G24)        (3 bytes)
+;           b) passcode to unclock - 3bytes
+;           c) passcode requested (upon question, e.g. 3x2 / 1x3 / 1x1)        (2 bytes)
 
-; --> 67 bytes per room (8.5kb for 128 rooms)
+; --> 80 bytes per room (10kb for 128 rooms)
+; --> 6 bytes per action number. If 2 actions in average per room, then 1.5kb for 128 room
 ; Need to store in the code the list of solved rooms
 
 ; when leaving the game, screens can be saved (with current position and all cleared rooms +passwords)
