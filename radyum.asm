@@ -11,7 +11,7 @@ LOCALS @@
 
 .DATA
 LOADINGSCR  db "c:\INTRO.LBM", 0
-TILESCR     db "c:\GRIDT4.LBM", 0
+TILESCR     db "c:\GRIDT5.LBM", 0
 
 FILEINFO    dw 4 dup (0)
 
@@ -115,7 +115,8 @@ MAIN PROC
     ; ** Room action
 
     ; Store room data in the video buffer (past 64000 first bytes)
-    call STORE_ROOM_VIDEO_RAM    
+    call STORE_ROOM_VIDEO_RAM
+    call SET_ROOM_CLUE
 
     ; Generate clue area and screen
     mov ax, [SCREEN_PTR+2]

@@ -25,11 +25,28 @@ CLUEAREA            db 1ah, 25 dup (1dh), 3ah
                     db 1bh, 25 dup (1eh), 3bh
                     db 1ch, 25 dup (3dh), 3ch
 
+ORIGINALCLUEAREA    db 1ah, 25 dup (1dh), 3ah
+                    db 1bh, 25 dup (1eh), 3bh
+                    db 1bh, 25 dup (1eh), 3bh
+                    db 1bh, 25 dup (1eh), 3bh
+                    db 1ch, 25 dup (3dh), 3ch
+
 PASSCODEAREA        db 1ah, 11 dup (1dh), 3ah
-                    db 1bh, 11 dup (1eh), 3bh
-                    db 1bh, 11 dup (1eh), 3bh
-                    db 1bh, 11 dup (1eh), 3bh
+                    db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
+                    db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
+                    db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
                     db 1ch, 11 dup (3dh), 3ch
+
+ORIGINALROOM        db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    db 0bh, 18 dup (05h), 0ah
 
 CURRENTROOM         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0206h, 8 dup (0203h), 0703h
@@ -61,6 +78,20 @@ ROOM_FLAGS          db 01b
                     ; contains all the position to be called
 JUMP_POS            dw 256 dup (0)
 
+ROOM_CLUE           db "Il vous manque une case  Essayez Espace,1239Z", "$"
+
+                    ; Store the letter mappings - starting from space (20h = 32) - see http://www.asciitable.com/
+                    ; Numbers start at 48 - upper case letters at 65 and lower case at 97
+LETTER_MAPPING      db 16 dup (1fh)                                         ; various characters
+                    db 40h, 41h, 42h, 43h, 44h, 45h, 46h, 47h, 48h, 49h     ; numbers
+                    db 7 dup (1fh)                                          ; various characters
+                    db 00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h     ; upper case letters
+                    db 0ah, 0bh, 0ch, 0dh, 0eh, 0fh, 10h, 11h, 12h, 13h 
+                    db 14h, 15h, 16h, 17h, 18h, 19h
+                    db 6 dup (1fh)                                          ; various characters
+                    db 20h, 21h, 22h, 23h, 24h, 25h, 26h, 27h, 28h, 29h     ; lower case letters
+                    db 2ah, 2bh, 2ch, 2dh, 2eh, 2fh, 30h, 31h, 32h, 33h 
+                    db 34h, 35h, 36h, 37h, 38h, 39h
 .CODE
 
 GENERATE_JUMP_POSITION:
@@ -567,46 +598,47 @@ GENERATE_AREA:
     ret
 
 
-GENERATE_CLUEAREA_old:
-    ; Generate the clue area (bottom right)
-    ; This is typically a one-off everytime we enter a room - so not time critical
-    ; Similar to the room, we store (temporarily) the screen after the video buffer
-    ; There is 1535 bytes left (and we only need up to 40*5=200 tiles -> 400 bytes)
-    pusha
+SET_ROOM_CLUE:
+    ; Set the room clue - we need first to reset the clue area
+
+    pusha    
     push ds
+    pop es
 
-    mov bx, [VIDEO_BUFFER]
-    mov es, bx
-
-    
-    ; move the tile config to the end of buffer
-    ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
-    ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
-    mov si, offset CLUEAREA
-    mov di, 320 * 200 + 600
+    mov si, offset ORIGINALCLUEAREA
+    mov di, offset CLUEAREA
     mov cx, 27 * 5
-    rep movsw
-
-    ; then we can
-    ; this time, no need to store it. We can simply generate the sprite in the video buffer
-    mov ds, ax
-    mov si, 320 * 200 + 600
-    mov di, 320 * 160 + 104
+    rep movsb
+    
+    ; Then we can add the message
+    mov si, offset ROOM_CLUE
+    mov di, 28 + offset CLUEAREA
 
     mov cl, 5
-    @@loop_sprite8_cols:
-        mov ch, 27
-        @@loop_sprite8_rows:
-            mov bl, es:[si]
-            call DISPLAY_SMALL_SPRITE
-            inc si
-            add di, 8
-            dec ch
-            jnz @@loop_sprite8_rows
-        add di, 320 * 8 - 27 * 8
-        dec cl
-        jnz @@loop_sprite8_cols
+    @@loop_cluearea_cols:
+        mov ch, 25
+        @@loop_cluearea_rows:
+            xor ah, ah
+            mov al, [si]
+            cmp al, 24h
+            jz @CLUE_AREA_DONE
 
-    pop ds
+            mov bx, offset LETTER_MAPPING
+            sub ax, 20h
+            add bx, ax
+            mov al, [bx]
+        @@add_letter:
+            mov [di], al
+            inc si
+            inc di
+            dec ch
+            jnz @@loop_cluearea_rows
+
+        add di, 2
+        dec cl
+        jnz @@loop_cluearea_cols
+
+
+    @CLUE_AREA_DONE:
     popa
     ret
