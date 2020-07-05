@@ -199,11 +199,21 @@ MAIN PROC
 
         ; check keyboard
         call READ_KEY_NOWAIT
-        ;in al, 60h
-        ;mov ah, al
-        ;and ah, 80h
         or al, al
         jnz @@user_input
+
+        ; mov si, offset ITERTEST
+        ; mov al, [si]
+        ; inc al
+        ; mov [si], al
+        ; and al, 11b
+        ; jnz @@wait_for_key_tile
+
+        ; in al, 60h
+        ; mov ah, al
+        ; and ah, 80h
+        ; jz @@user_input
+
         call RESET_CHARACTER_STANCE
         jmp @@wait_for_key_tile
 
