@@ -3,10 +3,11 @@
 ; ** Tools for keyboard management
 ; ** Require setup.asm
 
+KEY_BUFFER_SIZE equ 1
 
 .DATA 
 OLD_INT9_ADDR   dw 2 dup (?)
-KEY_BUFFER      db 255 dup (0)
+KEY_BUFFER      db KEY_BUFFER_SIZE dup (0)
 KEY_BUFFER_PTR  dw 0
 
 .CODE
@@ -135,6 +136,7 @@ BespokeInt9:
     mov bx, [KEY_BUFFER_PTR]
     ; if overflow then don't bother storing it
     inc bx
+    cmp bx, KEY_BUFFER_SIZE + 1
     jz @@pre_end_int9
     
     mov [KEY_BUFFER_PTR], bx

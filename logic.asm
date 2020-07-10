@@ -4,6 +4,7 @@
 ; ** Require ...
 
 GAME_ESCAPE_KEY         equ 1
+RESET_KEY               equ 13h
 CHARACTERSPRITE         equ CHARSTYLE
 CHARACTER_STEP          equ 7
 TOTAL_NUMBER_ROOM       equ 50
@@ -13,11 +14,22 @@ CHARACTER_BUFFER_RIGHT  equ 2 * 1
 CHARACTER_BUFFER_UP     equ 0
 CHARACTER_BUFFER_DOWN   equ -1 * 1
 
+UP_DOOR                 equ 1ch
+DOWN_DOOR               equ 1eh
+LEFT_DOOR               equ 1fh
+RIGHT_DOOR              equ 1dh
+
 .DATA 
 CHARSTYLE           db 10h
 CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
 CHARACTER_MOVE      dw 0004h
+
+                    ; set to next room if a door was hit
+NEXT_ROOM           db 0
+ADJUST_POS_X        dw 0
+ADJUST_POS_Y        dw 0
+
 
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Password details
@@ -73,7 +85,7 @@ CURRENTROOM         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     db 0bh, 18 dup (05h), 0ah
 
                     ; We use the edges to store information (assume that doors can only be on the edges)
-TARGETROOM          db 20 dup (0)
+TARGETROOM          db 10 dup (0), 1, 9 dup (0)
                     dw 0200h, 8 dup (0203h), 0003h
                     dw 0300h, 8 dup (0302h), 0002h
                     dw 0200h, 8 dup (0203h), 0003h
@@ -128,8 +140,25 @@ LETTER_MAPPING      db 16 dup (1fh)                                         ; va
 ALL_ROOMS_DATA      db 400 * TOTAL_NUMBER_ROOM dup (0)
 ALL_ROOMS_INFO      db 85 * TOTAL_NUMBER_ROOM dup (0)
 
+; ************************************************************************************
+; ** A few macros
+GET_NEXT_ROOM MACRO
+    ; get the corresponding action
+    xor ah, ah
+    mov al, [si + offset TARGETROOM]
+    dec al
+    shl al, 1
+    mov di, offset ACTION_LIST
+    add di, ax
+    mov al, [di]
+    ; remove the open door flag
+    and al, 7fh
+    mov [NEXT_ROOM], al
+ENDM
+
 
 .CODE
+
 
 GENERATE_JUMP_POSITION:
 
@@ -213,11 +242,22 @@ MOVE_CHARACTER_LEFT:
     add si, ax
 
     mov bl, [si + offset CURRENTROOM]
+    mov bh, bl
     and bl, 11111100b
     jz @@all_good
     shl ax, 4
     add ax, 16 - CHARACTER_BUFFER_LEFT
     mov [CHAR_POS_X], ax
+
+    ; is it a door ?
+    cmp bh, LEFT_DOOR
+    jnz @@all_good
+    add ax, 16 * 17
+    mov [ADJUST_POS_X], ax
+    mov ax, [CHAR_POS_Y]
+    mov [ADJUST_POS_Y], ax
+
+    GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -262,11 +302,22 @@ MOVE_CHARACTER_RIGHT:
     add si, ax
 
     mov bl, [si + offset CURRENTROOM]
+    mov bh, bl
     and bl, 11111100b
     jz @@all_good
     shl ax, 4
     sub ax, 16 - CHARACTER_BUFFER_RIGHT
     mov [CHAR_POS_X], ax
+
+    ; is it a door ?
+    cmp bh, RIGHT_DOOR
+    jnz @@all_good
+    sub ax, 16 * 17
+    mov [ADJUST_POS_X], ax
+    mov ax, [CHAR_POS_Y]
+    mov [ADJUST_POS_Y], ax
+
+    GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -312,11 +363,22 @@ MOVE_CHARACTER_UP:
     add si, bx
 
     mov bl, [si + offset CURRENTROOM]
+    mov bh, bl
     and bl, 11111100b
     jz @@all_good
     and ax, 0FFF0h
     add ax, 16 - CHARACTER_BUFFER_UP
     mov [CHAR_POS_Y], ax
+
+    ; is it a door ?
+    cmp bh, UP_DOOR
+    jnz @@all_good
+    add ax, 16 * 7
+    mov [ADJUST_POS_Y], ax
+    mov ax, [CHAR_POS_X]
+    mov [ADJUST_POS_X], ax
+
+    GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -362,12 +424,23 @@ MOVE_CHARACTER_DOWN:
     add si, bx
 
     mov bl, [si + offset CURRENTROOM]
+    mov bh, bl
     and bl, 11111100b
     jz @@all_good
     add ax, 16
     and ax, 0FFF0h
     sub ax, 16 - CHARACTER_BUFFER_DOWN
     mov [CHAR_POS_Y], ax
+
+    ; is it a door ?
+    cmp bh, DOWN_DOOR
+    jnz @@all_good
+    sub ax, 16 * 7
+    mov [ADJUST_POS_Y], ax
+    mov ax, [CHAR_POS_X]
+    mov [ADJUST_POS_X], ax
+
+    GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -401,10 +474,10 @@ PRESS_SPACE:
     mov al, [si + offset CURRENTROOM]
     xor al, 1b
     mov [si + offset CURRENTROOM], al
-    call STORE_ROOM_VIDEO_RAM
 
     ; we need know to confirm if the room matches the target
     call VALIDATE_ROOM
+    call STORE_ROOM_VIDEO_RAM
 
     @@done_press_space:
         pop si
@@ -512,18 +585,84 @@ VALIDATE_ROOM:
         dec al
         jnz @@check_row
 
+    ; if all identical - flag the room as done
     mov al, [ROOM_FLAGS]
     or al, 10b
+    and al, 11111110b
     mov [ROOM_FLAGS], al
 
     ; Now that we know the room is solved, we need to check each door
-
+    ; we check each side independently (we can ignore each corner)
+    ; top side
+    mov si, offset TARGETROOM + 1
+    mov cl, 18
+    mov ch, 1
+    call CHECK_SIDE
     
+    ; left side
+    mov si, offset TARGETROOM + 20
+    mov cl, 9
+    mov ch, 20
+    call CHECK_SIDE
+
+    ; right side
+    mov si, offset TARGETROOM + 19
+    mov cl, 9
+    mov ch, 20
+    call CHECK_SIDE
+
+    ; bottom side
+    mov si, offset TARGETROOM + 20*9
+    mov cl, 18
+    mov ch, 1
+    call CHECK_SIDE
+
     @@end_check:
         pop di
         pop cx
         pop es
 
+    ret
+
+
+CHECK_SIDE:
+    ; subroutine to check doors on side
+    ; SI points to the top-left corner of the side of interest
+    ; CL is the number of iteration
+    ; CH is the SI increment
+    xor ah, ah
+    @@iter_side:
+        mov al, [si]
+        or al, al
+        jz @@notadoor
+        ; if it's a door, check the corresponding action
+        dec al
+        shl al, 1
+        mov di, offset ACTION_LIST
+        add di, ax
+        inc di
+        ; can we open it ?
+        mov al, [di]
+        or al, al
+        jnz @@notadoor
+        dec di
+        ; now flag as open
+        mov al, [di]
+        or al, 10000000b
+        mov [di], al
+        
+        ; and change the tile - the target room and current room are 200 bytes away
+        sub si, 200
+        mov al, [si]
+        or al, 10h
+        mov [si], al
+        add si, 200
+
+    @@notadoor:
+        mov al, ch
+        add si, ax
+        dec cl
+        jnz @@iter_side
     ret
 
 

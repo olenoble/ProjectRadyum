@@ -300,11 +300,11 @@ COPY_VIDEOBUFFER:
     mov ds, ax
     xor si, si
     
-    cli
+    ;cli
     DETECT_VSYNC
     mov cx, 320 * 100
     rep movsw
-    sti
+    ;sti
     
     pop ds
     
@@ -328,22 +328,20 @@ COPY_VIDEOBUFFER_PARTIAL:
 
     mov ax, VGA_RAM_LOCATION
     mov es, ax
-    ;mov di, 0
     
     push ds
     mov ax, @DATA
     mov ds, ax
     mov ax, [VIDEO_BUFFER]
     mov ds, ax
-    ;xor si, si
     
-    cli
+    ;cli
     DETECT_VSYNC
     mov di, 64 * 320
     mov si, di
     mov cx, 320 * 16 / 2
     rep movsw
-    sti
+    ;sti
     
     pop ds
     
