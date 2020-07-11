@@ -3,6 +3,7 @@
 
 ; Constants
 LOCALS @@
+PLAYER_NUMBER   equ 0
 
 ; **********************************************
 ; **********************************************
@@ -25,6 +26,11 @@ DATA_PTR            dw 0
 BUFFER_PTR          dw 0
 MEM_PTR_END         dw 0
 ERR_MEMALLOCATE     db "Could not allocate memory", 13, 10, "$"
+
+; Players colors
+PLAYER_COLORS       db 204, 0, 76, 178, 0, 76
+                    db 204, 204, 0, 178, 178, 0
+                    db 0, 204, 76, 0, 178, 76
 
 
 ; **********************************************
@@ -100,7 +106,7 @@ MAIN PROC
     call BLACKOUT
     
     ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
-    ;call LOADING_SCREEN
+    call LOADING_SCREEN
 
     ; set up the various functions to move the character
     call GENERATE_JUMP_POSITION
@@ -109,6 +115,10 @@ MAIN PROC
     xor ax, ax
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
+
+    ; set the right color for the character
+    mov ax, 1
+    call UPDATE_PLAYER_COLORS
 
     ; *************************************************************************************************
     ; *************************************************************************************************
@@ -373,5 +383,29 @@ MULTIPLYx320:
     pop ax
     ret
 
+
+UPDATE_PLAYER_COLORS:
+    ; AL is the palette number
+    POINT_TO_PALETTE
+    
+    push ds
+    pop es
+    mov di, ax
+    add di, 15
+    mov si, offset PLAYER_COLORS
+    ; need to multiply by 6 the player number to get the right colors
+    ; x6 = x4 + x2
+    mov al, PLAYER_NUMBER
+    mov ah, al
+    shl al, 2
+    shl ah, 1
+    add al, ah
+    xor ah, ah
+    add si, ax
+
+    mov cx, 6
+    rep movsb
+
+    ret
 
 END MAIN
