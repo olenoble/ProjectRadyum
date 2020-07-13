@@ -3,6 +3,7 @@
 
 ; Constants
 LOCALS @@
+PLAYER_NUMBER   equ 0
 
 ; **********************************************
 ; **********************************************
@@ -25,6 +26,11 @@ DATA_PTR            dw 0
 BUFFER_PTR          dw 0
 MEM_PTR_END         dw 0
 ERR_MEMALLOCATE     db "Could not allocate memory", 13, 10, "$"
+
+; Players colors
+PLAYER_COLORS       db 204, 0, 76, 178, 0, 76
+                    db 204, 204, 0, 178, 178, 0
+                    db 0, 204, 76, 0, 178, 76
 
 
 ; **********************************************
@@ -100,7 +106,7 @@ MAIN PROC
     call BLACKOUT
     
     ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
-    ;call LOADING_SCREEN
+    call LOADING_SCREEN
 
     ; set up the various functions to move the character
     call GENERATE_JUMP_POSITION
@@ -110,29 +116,47 @@ MAIN PROC
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
 
+    ; set the right color for the character
+    mov ax, 1
+    call UPDATE_PLAYER_COLORS
+
     ; *************************************************************************************************
     ; *************************************************************************************************
     ; ** Room action
 
+    @@new_room:
     ; Store room data in the video buffer (past 64000 first bytes)
     call STORE_ROOM_VIDEO_RAM
     call SET_ROOM_CLUE
+
+    mov al, 0
+    mov [NEXT_ROOM], al
 
     ; Generate clue area and screen
     mov ax, [SCREEN_PTR+2]
     call GENERATE_CLUEAREA
     call GENERATE_PASSWORDAREA
     
+    ; generate tileset and sprite
+    mov bx, [CHAR_POS_Y]
+    mov di, [CHAR_POS_X]
+    call MULTIPLYx320
+    add di, bx
+
+    xor bh, bh
+    mov bl, [CHARSTYLE]
+
     push ds
-    mov ds, ax    
+    mov ds, ax
+    call DISPLAY_SPRITE_FAST
     call DISPLAY_TILESCREEN_FAST
+    call COPY_VIDEOBUFFER
     pop ds
 
     ; Fade in is screwed here - check why
-    ;mov word ptr [FADEWAITITR], 4
+    mov word ptr [FADEWAITITR], 4
     mov ax, 1
-    ;call FADEIN
-    call SET_PALETTE
+    call FADEIN
 
     @@wait_for_key_tile:
 
@@ -159,51 +183,62 @@ MAIN PROC
         push ds
         mov ax, [SCREEN_PTR+2]
         mov ds, ax
+        call DISPLAY_TILESCREEN_FAST
         call DISPLAY_SPRITE_FAST
         call COPY_VIDEOBUFFER
         ;call COPY_VIDEOBUFFER_PARTIAL
 
-        ; redraw the meta tile around the character
-        pop ds
-        push bx
-        mov bx, [CHAR_POS_Y]
-        mov di, [CHAR_POS_X]
-        and bx, 0FFF0h
-        and di, 0FFF0h
+        ;; redraw the meta tile around the character
+        ;pop ds
+        ;push bx
+        ;mov bx, [CHAR_POS_Y]
+        ;mov di, [CHAR_POS_X]
+        ;and bx, 0FFF0h
+        ;and di, 0FFF0h
 
-        push ds
-        mov ax, [SCREEN_PTR+2]
-        mov ds, ax    
+        ;push ds
+        ;mov ax, [SCREEN_PTR+2]
+        ;mov ds, ax    
         
-        ; need to divide CHAR_POS_X by 16 and multiply x2 --> divide by 8
-        mov si, di
-        shr si, 3
-        ; divide bx by 16 to get the row in tile
-        ; need then to multiply by 40 (20 tiles per row x 2 bytes)
-        ; since 40 = 32 + 8 --> bx / 16 * 40 = bx * 2 + bx / 2
+        ;; need to divide CHAR_POS_X by 16 and multiply x2 --> divide by 8
+        ;mov si, di
+        ;shr si, 3
+        ;; divide bx by 16 to get the row in tile
+        ;; need then to multiply by 40 (20 tiles per row x 2 bytes)
+        ;; since 40 = 32 + 8 --> bx / 16 * 40 = bx * 2 + bx / 2
 
-        mov ax, bx
-        shl ax, 1
-        add si, ax
-        mov ax, bx
-        shr ax, 1 
-        add si, ax
+        ;mov ax, bx
+        ;shl ax, 1
+        ;add si, ax
+        ;mov ax, bx
+        ;shr ax, 1 
+        ;add si, ax
 
-        call MULTIPLYx320
-        add di, bx
-        mov bx, si
-        add bx, 320*200 + 200
-        call DISPLAY_METATILE_FAST
+        ;call MULTIPLYx320
+        ;add di, bx
+        ;mov bx, si
+        ;add bx, 320*200 + 200
+        ;call DISPLAY_METATILE_FAST        
         pop ds
-        pop bx
+        ;pop bx
 
         ; check keyboard
         call READ_KEY_NOWAIT
-        ;in al, 60h
-        ;mov ah, al
-        ;and ah, 80h
         or al, al
         jnz @@user_input
+
+        ; mov si, offset ITERTEST
+        ; mov al, [si]
+        ; inc al
+        ; mov [si], al
+        ; and al, 11b
+        ; jnz @@wait_for_key_tile
+
+        ; in al, 60h
+        ; mov ah, al
+        ; and ah, 80h
+        ; jz @@user_input
+
         call RESET_CHARACTER_STANCE
         jmp @@wait_for_key_tile
 
@@ -211,7 +246,47 @@ MAIN PROC
         cmp al, GAME_ESCAPE_KEY
         jz @@exit_game_loop
 
+        cmp al, RESET_KEY
+        jz @@reset_room
+
         call UPDATE_CHARACTER_STANCE_DIRECTION
+
+        ; check if we changed room
+        mov al, [NEXT_ROOM]
+        or al, al
+        jz @@still_sameroom
+
+        mov ax, [ADJUST_POS_X]
+        mov [CHAR_POS_X], ax
+
+        mov ax, [ADJUST_POS_Y]
+        mov [CHAR_POS_Y], ax
+        
+        xor ax, ax
+        mov [ADJUST_POS_X], ax
+        mov [ADJUST_POS_Y], ax
+
+        mov word ptr [FADEWAITITR], 4
+        mov ax, 1
+        call FADEOUT
+        jmp @@new_room
+    
+    @@reset_room:
+        ; is room already complete / changeable ?
+        mov al, [ROOM_FLAGS]
+        mov ah, al
+        and ah, 1b
+        jz @@still_sameroom
+
+        push ds
+        pop es
+        mov si, offset ORIGINALROOM
+        mov di, offset CURRENTROOM
+        mov cx, 100
+        rep movsw
+        call STORE_ROOM_VIDEO_RAM
+
+    @@still_sameroom:
         jmp @@wait_for_key_tile
 
 @@exit_game_loop:
@@ -308,5 +383,29 @@ MULTIPLYx320:
     pop ax
     ret
 
+
+UPDATE_PLAYER_COLORS:
+    ; AL is the palette number
+    POINT_TO_PALETTE
+    
+    push ds
+    pop es
+    mov di, ax
+    add di, 15
+    mov si, offset PLAYER_COLORS
+    ; need to multiply by 6 the player number to get the right colors
+    ; x6 = x4 + x2
+    mov al, PLAYER_NUMBER
+    mov ah, al
+    shl al, 2
+    shl ah, 1
+    add al, ah
+    xor ah, ah
+    add si, ax
+
+    mov cx, 6
+    rep movsb
+
+    ret
 
 END MAIN

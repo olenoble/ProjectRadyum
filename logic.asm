@@ -4,13 +4,20 @@
 ; ** Require ...
 
 GAME_ESCAPE_KEY         equ 1
+RESET_KEY               equ 13h
 CHARACTERSPRITE         equ CHARSTYLE
-CHARACTER_STEP          equ 4
+CHARACTER_STEP          equ 7
+TOTAL_NUMBER_ROOM       equ 50
 
 CHARACTER_BUFFER_LEFT   equ 3 * 1
 CHARACTER_BUFFER_RIGHT  equ 2 * 1
 CHARACTER_BUFFER_UP     equ 0
 CHARACTER_BUFFER_DOWN   equ -1 * 1
+
+UP_DOOR                 equ 1ch
+DOWN_DOOR               equ 1eh
+LEFT_DOOR               equ 1fh
+RIGHT_DOOR              equ 1dh
 
 .DATA 
 CHARSTYLE           db 10h
@@ -18,7 +25,21 @@ CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
 CHARACTER_MOVE      dw 0004h
 
-                    ; db 1ah, 1 dup (1dh), 1eh, 22h, 2bh, 34h, 24h, 1eh, 18 dup (1dh), 3ah
+                    ; set to next room if a door was hit
+NEXT_ROOM           db 0
+ADJUST_POS_X        dw 0
+ADJUST_POS_Y        dw 0
+
+
+                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    ; Password details
+                    ; Each password is 3 bytes long (1 letter and 2 numbers)
+                    ; for each password, we associate a position XY (stored as a byte)
+PASSWORD_LIST       db 27 * 3 dup (0)
+PASSWORD_POSITIONS  db 27 dup (0)
+
+                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    ; Bottom area
 CLUEAREA            db 1ah, 25 dup (1dh), 3ah
                     db 1bh, 25 dup (1eh), 3bh
                     db 1bh, 25 dup (1eh), 3bh
@@ -36,6 +57,10 @@ PASSCODEAREA        db 1ah, 11 dup (1dh), 3ah
                     db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
                     db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
                     db 1ch, 11 dup (3dh), 3ch
+
+                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    ; Current room details
+ROOM_NUMBER         db 1
 
 ORIGINALROOM        db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0206h, 8 dup (0203h), 0703h
@@ -59,28 +84,41 @@ CURRENTROOM         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
                     dw 0306h, 8 dup (0302h), 0702h
                     db 0bh, 18 dup (05h), 0ah
 
-TARGETROOM          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah
+                    ; We use the edges to store information (assume that doors can only be on the edges)
+TARGETROOM          db 10 dup (0), 1, 9 dup (0)
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    db 20 dup (0)
+
+                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    ; All room specific info
 
                     ; flags for the room 
                     ;   - bit 0 is set if room is changeable
                     ;   - bit 1 is set if room is completed
                     ;   - bit 2 is set if room generates a password upon solving
 ROOM_FLAGS          db 001b
+PASSCODE_ROOM       db 0                ; reference to passcode
+
+                    ; Assume one action per door and up to 4 doors per room
+                    ; First byte is destination room - higher bit is set to 1 if door is open
+                    ; Next byte is reference to password (need to store password somewhere - there can be 27 in total for 3 players)
+ACTION_LIST         db 2, 0
+                    db 6 dup (0)
+
+ROOM_CLUE           db "Il vous manque une case  Essayez Espace", "$"
+
+                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    ; Pre-mapped data
 
                     ; contains all the position to be called
 JUMP_POS            dw 256 dup (0)
-
-ROOM_CLUE           db "Il vous manque une case  Essayez Espace", "$"
-ROOM_PASSWORD       db 3 dup (0)
 
                     ; Store the letter mappings - starting from space (20h = 32) - see http://www.asciitable.com/
                     ; Numbers start at 48 - upper case letters at 65 and lower case at 97
@@ -94,7 +132,33 @@ LETTER_MAPPING      db 16 dup (1fh)                                         ; va
                     db 20h, 21h, 22h, 23h, 24h, 25h, 26h, 27h, 28h, 29h     ; lower case letters
                     db 2ah, 2bh, 2ch, 2dh, 2eh, 2fh, 30h, 31h, 32h, 33h 
                     db 34h, 35h, 36h, 37h, 38h, 39h
+
+                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    ; All room data
+                    ; 400 bytes per room (20x10 for current and for target room)
+                    ; for the info 2 bytes (flags + code) & 8 bytes for actions - 25*3 bytes for the message = 85 bytes per room
+ALL_ROOMS_DATA      db 400 * TOTAL_NUMBER_ROOM dup (0)
+ALL_ROOMS_INFO      db 85 * TOTAL_NUMBER_ROOM dup (0)
+
+; ************************************************************************************
+; ** A few macros
+GET_NEXT_ROOM MACRO
+    ; get the corresponding action
+    xor ah, ah
+    mov al, [si + offset TARGETROOM]
+    dec al
+    shl al, 1
+    mov di, offset ACTION_LIST
+    add di, ax
+    mov al, [di]
+    ; remove the open door flag
+    and al, 7fh
+    mov [NEXT_ROOM], al
+ENDM
+
+
 .CODE
+
 
 GENERATE_JUMP_POSITION:
 
@@ -133,7 +197,6 @@ RESET_CHARACTER_STANCE:
     ; BL is modified
     
     ; problem here is that - we read the keyboard too often and it resets to zero too quickly
-    ;xor ax, ax
     mov ax, CHARACTER_STEP
     mov [CHARACTER_MOVE], ax
 
@@ -179,11 +242,22 @@ MOVE_CHARACTER_LEFT:
     add si, ax
 
     mov bl, [si + offset CURRENTROOM]
+    mov bh, bl
     and bl, 11111100b
     jz @@all_good
     shl ax, 4
     add ax, 16 - CHARACTER_BUFFER_LEFT
     mov [CHAR_POS_X], ax
+
+    ; is it a door ?
+    cmp bh, LEFT_DOOR
+    jnz @@all_good
+    add ax, 16 * 17
+    mov [ADJUST_POS_X], ax
+    mov ax, [CHAR_POS_Y]
+    mov [ADJUST_POS_Y], ax
+
+    GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -228,11 +302,22 @@ MOVE_CHARACTER_RIGHT:
     add si, ax
 
     mov bl, [si + offset CURRENTROOM]
+    mov bh, bl
     and bl, 11111100b
     jz @@all_good
     shl ax, 4
     sub ax, 16 - CHARACTER_BUFFER_RIGHT
     mov [CHAR_POS_X], ax
+
+    ; is it a door ?
+    cmp bh, RIGHT_DOOR
+    jnz @@all_good
+    sub ax, 16 * 17
+    mov [ADJUST_POS_X], ax
+    mov ax, [CHAR_POS_Y]
+    mov [ADJUST_POS_Y], ax
+
+    GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -278,11 +363,22 @@ MOVE_CHARACTER_UP:
     add si, bx
 
     mov bl, [si + offset CURRENTROOM]
+    mov bh, bl
     and bl, 11111100b
     jz @@all_good
     and ax, 0FFF0h
     add ax, 16 - CHARACTER_BUFFER_UP
     mov [CHAR_POS_Y], ax
+
+    ; is it a door ?
+    cmp bh, UP_DOOR
+    jnz @@all_good
+    add ax, 16 * 7
+    mov [ADJUST_POS_Y], ax
+    mov ax, [CHAR_POS_X]
+    mov [ADJUST_POS_X], ax
+
+    GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -328,12 +424,23 @@ MOVE_CHARACTER_DOWN:
     add si, bx
 
     mov bl, [si + offset CURRENTROOM]
+    mov bh, bl
     and bl, 11111100b
     jz @@all_good
     add ax, 16
     and ax, 0FFF0h
     sub ax, 16 - CHARACTER_BUFFER_DOWN
     mov [CHAR_POS_Y], ax
+
+    ; is it a door ?
+    cmp bh, DOWN_DOOR
+    jnz @@all_good
+    sub ax, 16 * 7
+    mov [ADJUST_POS_Y], ax
+    mov ax, [CHAR_POS_X]
+    mov [ADJUST_POS_X], ax
+
+    GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -367,10 +474,10 @@ PRESS_SPACE:
     mov al, [si + offset CURRENTROOM]
     xor al, 1b
     mov [si + offset CURRENTROOM], al
-    call STORE_ROOM_VIDEO_RAM
 
     ; we need know to confirm if the room matches the target
     call VALIDATE_ROOM
+    call STORE_ROOM_VIDEO_RAM
 
     @@done_press_space:
         pop si
@@ -390,9 +497,9 @@ UPDATE_CHARACTER_STANCE_DIRECTION:
     push ax
     push si
 
-    mov si, [CHARACTER_MOVE]
-    inc si
-    mov [CHARACTER_MOVE], si
+    ;mov si, [CHARACTER_MOVE]
+    ;inc si
+    ;mov [CHARACTER_MOVE], si
 
     xor ah, ah
     mov si, offset JUMP_POS
@@ -448,7 +555,7 @@ VALIDATE_ROOM:
     ; Check whether the current room matches the target room
     ; ignore the boundaries - we assume all doors are on boundaries (whether they are open is not a target)
     ; so we start on the second tile of the first row
-    ; AX and SI will be changed
+    ; AX and SI will be changed (should be ok because it's only called from PRESS_SPACE which saved them in the stack)
     push es
     push cx
     push di
@@ -478,14 +585,84 @@ VALIDATE_ROOM:
         dec al
         jnz @@check_row
 
-    mov al, 10b
+    ; if all identical - flag the room as done
+    mov al, [ROOM_FLAGS]
+    or al, 10b
+    and al, 11111110b
     mov [ROOM_FLAGS], al
+
+    ; Now that we know the room is solved, we need to check each door
+    ; we check each side independently (we can ignore each corner)
+    ; top side
+    mov si, offset TARGETROOM + 1
+    mov cl, 18
+    mov ch, 1
+    call CHECK_SIDE
     
+    ; left side
+    mov si, offset TARGETROOM + 20
+    mov cl, 9
+    mov ch, 20
+    call CHECK_SIDE
+
+    ; right side
+    mov si, offset TARGETROOM + 19
+    mov cl, 9
+    mov ch, 20
+    call CHECK_SIDE
+
+    ; bottom side
+    mov si, offset TARGETROOM + 20*9
+    mov cl, 18
+    mov ch, 1
+    call CHECK_SIDE
+
     @@end_check:
         pop di
         pop cx
         pop es
 
+    ret
+
+
+CHECK_SIDE:
+    ; subroutine to check doors on side
+    ; SI points to the top-left corner of the side of interest
+    ; CL is the number of iteration
+    ; CH is the SI increment
+    xor ah, ah
+    @@iter_side:
+        mov al, [si]
+        or al, al
+        jz @@notadoor
+        ; if it's a door, check the corresponding action
+        dec al
+        shl al, 1
+        mov di, offset ACTION_LIST
+        add di, ax
+        inc di
+        ; can we open it ?
+        mov al, [di]
+        or al, al
+        jnz @@notadoor
+        dec di
+        ; now flag as open
+        mov al, [di]
+        or al, 10000000b
+        mov [di], al
+        
+        ; and change the tile - the target room and current room are 200 bytes away
+        sub si, 200
+        mov al, [si]
+        or al, 10h
+        mov [si], al
+        add si, 200
+
+    @@notadoor:
+        mov al, ch
+        add si, ax
+        dec cl
+        jnz @@iter_side
     ret
 
 
