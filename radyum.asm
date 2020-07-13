@@ -1,19 +1,17 @@
 .MODEL SMALL
 .386
 
-; TO DO --> instead of refreshing the whole screen
-; only refresh the 32*32 area around (should be able to nearly double frame by second)
-; When releasing code - remove all c:\ (only useful for TD)
-
 ; Constants
 LOCALS @@
-CHARACTER_STEP   equ 2
 
+; **********************************************
+; **********************************************
+; ** STACK + DATA here
 .STACK 4096
 
 .DATA
 LOADINGSCR  db "c:\INTRO.LBM", 0
-TILESCR     db "c:\GRIDT2.LBM", 0
+TILESCR     db "c:\GRIDT6.LBM", 0
 
 FILEINFO    dw 4 dup (0)
 
@@ -27,31 +25,13 @@ DATA_PTR            dw 0
 BUFFER_PTR          dw 0
 MEM_PTR_END         dw 0
 ERR_MEMALLOCATE     db "Could not allocate memory", 13, 10, "$"
-SCREENTEST          db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah
-
-SCREENTEST2         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah
 
 
 ; **********************************************
 ; **********************************************
+; ** CODE here
+.CODE
+
 ; ** Include files here
 INCLUDE setup.asm
 INCLUDE intro.asm
@@ -60,8 +40,6 @@ INCLUDE keyb.asm
 INCLUDE lbmtool.asm
 INCLUDE grafx.asm
 INCLUDE logic.asm
-
-.CODE
 
 ; **********************************************
 ; **********************************************
@@ -124,6 +102,9 @@ MAIN PROC
     ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
     ;call LOADING_SCREEN
 
+    ; set up the various functions to move the character
+    call GENERATE_JUMP_POSITION
+
     ; Clear out the video buffer + RAM before we can start
     xor ax, ax
     call CLEAR_VIDEOBUFFER
@@ -131,53 +112,40 @@ MAIN PROC
 
     ; *************************************************************************************************
     ; *************************************************************************************************
-    ; generate a dummy screen
-    mov ax, [VIDEO_BUFFER]
-    mov es, ax
+    ; ** Room action
 
-    ; move the tile config to the end of buffer
-    ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
-    ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
-    mov si, offset SCREENTEST2
-    mov di, 320 * 200
-    mov cx, 100
-    rep movsw
+    ; Store room data in the video buffer (past 64000 first bytes)
+    call STORE_ROOM_VIDEO_RAM
+    call SET_ROOM_CLUE
 
-    ; then we can add the corresponding position in the image for each tile
-    ; this takes an additional 400 bytes (since address is a word)
-    push ds
-    mov ds, ax
-    mov si, 320*200
-    mov di, 320*200+200
-    mov cx, 200
-    @@loop_tileaddresses:
-        ; to convert the tile number into a position - easy now if we use x256
-        mov al, es:[si]
-        xor ah, ah
-        shl ax, 4
-        shl ah, 4
-        stosw
-        inc si
-        dec cx
-        jnz @@loop_tileaddresses
-
-    pop ds
-
-    ; test METATILE
-    push ds
+    ; Generate clue area and screen
     mov ax, [SCREEN_PTR+2]
-    mov ds, ax
+    call GENERATE_CLUEAREA
+    call GENERATE_PASSWORDAREA
+    
+    push ds
+    mov ds, ax    
     call DISPLAY_TILESCREEN_FAST
     pop ds
-    call COPY_VIDEOBUFFER
 
-    ; a little cycle of colors here for a classy effect
-    mov word ptr [FADEWAITITR], 4
+    ; Fade in is screwed here - check why
+    ;mov word ptr [FADEWAITITR], 4
     mov ax, 1
-    call FADEIN
+    ;call FADEIN
+    call SET_PALETTE
 
-    ;mov dx, 0
     @@wait_for_key_tile:
+
+        ; color cycle if room is completed
+        mov al, [ROOM_FLAGS]
+        and al, 10b
+        jz @@uncompleted_room
+        mov ax, 1
+        mov bx, (10 * 16 - 1) * 16 * 16 + (9 * 16)
+        call COLORCYCLE
+        call SET_PALETTE
+
+    @@uncompleted_room:
 
         mov bx, [CHAR_POS_Y]
         mov di, [CHAR_POS_X]
@@ -230,12 +198,12 @@ MAIN PROC
         pop bx
 
         ; check keyboard
-        ;call READ_KEY_NOWAIT
-        in al, 60h
-        mov ah, al
-        and ah, 80h
-        jz @@user_input
-
+        call READ_KEY_NOWAIT
+        ;in al, 60h
+        ;mov ah, al
+        ;and ah, 80h
+        or al, al
+        jnz @@user_input
         call RESET_CHARACTER_STANCE
         jmp @@wait_for_key_tile
 
@@ -244,7 +212,6 @@ MAIN PROC
         jz @@exit_game_loop
 
         call UPDATE_CHARACTER_STANCE_DIRECTION
-        
         jmp @@wait_for_key_tile
 
 @@exit_game_loop:
