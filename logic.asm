@@ -1,7 +1,7 @@
 ; ***************************************************************************************
 ; ***************************************************************************************
 ; ** Bespoke function for game logic
-; ** Require ...
+; ** Require grafx.asm
 
 GAME_ESCAPE_KEY         equ 1
 RESET_KEY               equ 13h
@@ -60,44 +60,15 @@ PASSCODEAREA        db 1ah, 11 dup (1dh), 3ah
 
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Current room details
-ROOM_NUMBER         db 1
+ROOM_NUMBER         db 0
 
-ORIGINALROOM        db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah
-
-CURRENTROOM         db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah
-
-                    ; We use the edges to store information (assume that doors can only be on the edges)
-TARGETROOM          db 10 dup (0), 1, 9 dup (0)
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    db 20 dup (0)
+ORIGINALROOM        db 200 dup (0)
+CURRENTROOM         db 200 dup (0)
+TARGETROOM          db 200 dup (0)
 
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; All room specific info
+                    ; all the data below must remain in that order!
 
                     ; flags for the room 
                     ;   - bit 0 is set if room is changeable
@@ -112,7 +83,7 @@ PASSCODE_ROOM       db 0                ; reference to passcode
 ACTION_LIST         db 2, 0
                     db 6 dup (0)
 
-ROOM_CLUE           db "Il vous manque une case  Essayez Espace", "$"
+ROOM_CLUE           db 85 dup (0)
 
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Pre-mapped data
@@ -137,8 +108,54 @@ LETTER_MAPPING      db 16 dup (1fh)                                         ; va
                     ; All room data
                     ; 400 bytes per room (20x10 for current and for target room)
                     ; for the info 2 bytes (flags + code) & 8 bytes for actions - 25*3 bytes for the message = 85 bytes per room
-ALL_ROOMS_DATA      db 400 * TOTAL_NUMBER_ROOM dup (0)
-ALL_ROOMS_INFO      db 85 * TOTAL_NUMBER_ROOM dup (0)
+ALL_ROOMS_DATA      db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    db 0bh, 18 dup (05h), 0ah
+
+                    db 10 dup (0), 1, 9 dup (0)
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    db 20 dup (0)
+
+                    db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 030fh, 8 dup (0302h), 0702h
+                    dw 0206h, 8 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
+                    dw 0306h, 8 dup (0302h), 0702h
+                    db 0bh, 9 dup (05h), 1eh, 8 dup (05h), 0ah
+
+                    db 10 dup (0), 1, 9 dup (0)
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0302h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    dw 0200h, 8 dup (0203h), 0003h
+                    dw 0300h, 8 dup (0302h), 0002h
+                    db 10 dup (0), 3, 9 dup (0)
+
+                    db 400 * (TOTAL_NUMBER_ROOM-1) dup (0)
+ALL_ROOMS_INFO      db 001b, 0, 2, 0, 0, 0, 0, 0, 0, 0, "Il vous manque une case", "$", (75 - 24) dup (0)
+                    db 001b, 0, 3, 1, 8, 1, 1, 0, 0, 0, "Test", "$", (75 - 4) dup (0)
+                    db 85 * (TOTAL_NUMBER_ROOM-1) dup (0)
 
 ; ************************************************************************************
 ; ** A few macros
@@ -826,3 +843,111 @@ SET_ROOM_CLUE:
     @CLUE_AREA_DONE:
     popa
     ret
+
+
+UPLOAD_CURRENT_ROOM:
+    pusha
+
+    push ds
+    pop es
+
+    ; first update the original / target room
+    mov al, [ROOM_NUMBER]
+    dec al
+    ; shift by x400 = x256 + x144 = x256 + x128 + x16
+    ; x256 is easy since it means moving al to ah
+    mov ah, al    
+    mov bl, al
+    xor al, al
+    xor bh, bh
+    shl bx, 7       ; x128
+    add ax, bx
+    shr bx, 3       ; /128 and x16, i.e. /8
+    add ax, bx
+
+    mov si, offset ALL_ROOMS_DATA
+    add si, ax
+    mov di, offset ORIGINALROOM
+    mov cx, 100
+    rep movsw
+
+    mov di, offset TARGETROOM
+    mov cx, 100
+    rep movsw
+
+    ; copy over original room to current room
+    mov si, offset ORIGINALROOM
+    mov di, offset CURRENTROOM
+    mov cx, 100
+    rep movsw
+ 
+    ; now all the room information
+    mov al, [ROOM_NUMBER]
+    dec al
+    ; we need to multiply x85. This one is tricky = x64 + x21 = x64 + x16 + x4 + x1
+    xor ah, ah
+    mov bx, ax
+    shl ax, 6       ; x64
+    add ax, bx      ; + x1
+    shl bx, 2       
+    add ax, bx      ; + x4
+    shl bx, 2
+    add ax, bx      ; + x16
+    mov si, offset ALL_ROOMS_INFO
+    add si, ax
+    mov di, offset ROOM_FLAGS
+    mov cx, 85
+    rep movsb
+
+    popa
+    ret
+
+SAVE_CURRENT_ROOM:
+    ; this is basically the reverse of UPLOAD_CURRENT_ROOM - we essentially exchange si and di
+    ; it stores the current room data, if we are leaving it
+    pusha
+
+    push ds
+    pop es
+
+    ; first update the original / target room
+    mov al, [ROOM_NUMBER]
+    dec al
+    ; shift by x400 = x256 + x144 = x256 + x128 + x16
+    ; x256 is easy since it means moving al to ah
+    mov ah, al    
+    mov bl, al
+    xor al, al
+    xor bh, bh
+    shl bx, 7       ; x128
+    add ax, bx
+    shr bx, 3       ; /128 and x16, i.e. /8
+    add ax, bx
+
+    mov di, offset ALL_ROOMS_DATA
+    add di, ax
+    mov si, offset CURRENTROOM
+    mov cx, 100
+    rep movsw
+ 
+    ; now all the room information
+    mov al, [ROOM_NUMBER]
+    dec al
+    ; we need to multiply x85. This one is tricky = x64 + x21 = x64 + x16 + x4 + x1
+    xor ah, ah
+    mov bx, ax
+    shl ax, 6       ; x64
+    add ax, bx      ; + x1
+    shl bx, 2       
+    add ax, bx      ; + x4
+    shl bx, 2
+    add ax, bx      ; + x16
+    mov di, offset ALL_ROOMS_INFO
+    add di, ax
+    mov si, offset ROOM_FLAGS
+    mov cx, 85
+    rep movsb
+
+    popa
+    ret
+
