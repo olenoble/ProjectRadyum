@@ -470,9 +470,14 @@ PRESS_SPACE:
     shr ax, 4
     add si, ax
 
-    ; now get tile
+    ; now get tile - little trick, only tile 2 and 3 can be swapped
+    ; tile 0 and 1 can't (to be used to fix certain tiles)
     mov al, [si + offset CURRENTROOM]
-    xor al, 1b
+    mov ah, al
+    and ah, 10b
+    shr ah, 1
+    ;xor al, 1b
+    xor al, ah
     mov [si + offset CURRENTROOM], al
 
     ; we need know to confirm if the room matches the target

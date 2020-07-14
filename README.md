@@ -2,6 +2,7 @@
 
 TO DO<br><br>
 <ol>
+<li>How do we handle the door in the next (room ??) - should be opened as well (use same action ID!!!)
 <li>Password management<br>
 <li>Generate all rooms<br>
 <li>Change loading screen to use the tiles instead ??<br>
