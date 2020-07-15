@@ -1,23 +1,7 @@
 ; ***************************************************************************************
 ; ***************************************************************************************
 ; ** Bespoke function for game logic
-; ** Require grafx.asm
-
-GAME_ESCAPE_KEY         equ 1
-RESET_KEY               equ 13h
-CHARACTERSPRITE         equ CHARSTYLE
-CHARACTER_STEP          equ 7
-TOTAL_NUMBER_ROOM       equ 50
-
-CHARACTER_BUFFER_LEFT   equ 3 * 1
-CHARACTER_BUFFER_RIGHT  equ 2 * 1
-CHARACTER_BUFFER_UP     equ 0
-CHARACTER_BUFFER_DOWN   equ -1 * 1
-
-UP_DOOR                 equ 1ch
-DOWN_DOOR               equ 1eh
-LEFT_DOOR               equ 1fh
-RIGHT_DOOR              equ 1dh
+; ** Require grafx.asm & roomdata.asm & roominfo.asm & miscdata.asm
 
 .DATA 
 CHARSTYLE           db 10h
@@ -29,34 +13,6 @@ CHARACTER_MOVE      dw 0004h
 NEXT_ROOM           db 0
 ADJUST_POS_X        dw 0
 ADJUST_POS_Y        dw 0
-
-
-                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    ; Password details
-                    ; Each password is 3 bytes long (1 letter and 2 numbers)
-                    ; for each password, we associate a position XY (stored as a byte)
-PASSWORD_LIST       db 27 * 3 dup (0)
-PASSWORD_POSITIONS  db 27 dup (0)
-
-                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    ; Bottom area
-CLUEAREA            db 1ah, 25 dup (1dh), 3ah
-                    db 1bh, 25 dup (1eh), 3bh
-                    db 1bh, 25 dup (1eh), 3bh
-                    db 1bh, 25 dup (1eh), 3bh
-                    db 1ch, 25 dup (3dh), 3ch
-
-ORIGINALCLUEAREA    db 1ah, 25 dup (1dh), 3ah
-                    db 1bh, 25 dup (1eh), 3bh
-                    db 1bh, 25 dup (1eh), 3bh
-                    db 1bh, 25 dup (1eh), 3bh
-                    db 1ch, 25 dup (3dh), 3ch
-
-PASSCODEAREA        db 1ah, 11 dup (1dh), 3ah
-                    db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
-                    db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
-                    db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
-                    db 1ch, 11 dup (3dh), 3ch
 
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Current room details
@@ -82,80 +38,13 @@ PASSCODE_ROOM       db 0                ; reference to passcode
                     ; Next byte is reference to password (need to store password somewhere - there can be 27 in total for 3 players)
 ACTION_LIST         db 2, 0
                     db 6 dup (0)
-
 ROOM_CLUE           db 85 dup (0)
 
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Pre-mapped data
-
                     ; contains all the position to be called
 JUMP_POS            dw 256 dup (0)
 
-                    ; Store the letter mappings - starting from space (20h = 32) - see http://www.asciitable.com/
-                    ; Numbers start at 48 - upper case letters at 65 and lower case at 97
-LETTER_MAPPING      db 16 dup (1fh)                                         ; various characters
-                    db 40h, 41h, 42h, 43h, 44h, 45h, 46h, 47h, 48h, 49h     ; numbers
-                    db 7 dup (1fh)                                          ; various characters
-                    db 00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h     ; upper case letters
-                    db 0ah, 0bh, 0ch, 0dh, 0eh, 0fh, 10h, 11h, 12h, 13h 
-                    db 14h, 15h, 16h, 17h, 18h, 19h
-                    db 6 dup (1fh)                                          ; various characters
-                    db 20h, 21h, 22h, 23h, 24h, 25h, 26h, 27h, 28h, 29h     ; lower case letters
-                    db 2ah, 2bh, 2ch, 2dh, 2eh, 2fh, 30h, 31h, 32h, 33h 
-                    db 34h, 35h, 36h, 37h, 38h, 39h
-
-                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    ; All room data
-                    ; 400 bytes per room (20x10 for current and for target room)
-                    ; for the info 2 bytes (flags + code) & 8 bytes for actions - 25*3 bytes for the message = 85 bytes per room
-ALL_ROOMS_DATA      db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 18 dup (05h), 0ah
-
-                    db 10 dup (0), 1, 9 dup (0)
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    db 20 dup (0)
-
-                    db 08h, 9 dup (04h), 0ch, 8 dup (04h), 09h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 030fh, 8 dup (0302h), 0702h
-                    dw 0206h, 8 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    dw 0206h, 5 dup (0203h), (0303h), 2 dup (0203h), 0703h
-                    dw 0306h, 8 dup (0302h), 0702h
-                    db 0bh, 9 dup (05h), 1eh, 8 dup (05h), 0ah
-
-                    db 10 dup (0), 1, 9 dup (0)
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0302h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    dw 0200h, 8 dup (0203h), 0003h
-                    dw 0300h, 8 dup (0302h), 0002h
-                    db 10 dup (0), 3, 9 dup (0)
-
-                    db 400 * (TOTAL_NUMBER_ROOM-1) dup (0)
-ALL_ROOMS_INFO      db 001b, 0, 2, 0, 0, 0, 0, 0, 0, 0, "Il vous manque une case", "$", (75 - 24) dup (0)
-                    db 001b, 0, 3, 1, 8, 1, 1, 0, 0, 0, "Test", "$", (75 - 4) dup (0)
-                    db 85 * (TOTAL_NUMBER_ROOM-1) dup (0)
 
 ; ************************************************************************************
 ; ** A few macros
@@ -175,7 +64,6 @@ ENDM
 
 
 .CODE
-
 
 GENERATE_JUMP_POSITION:
 
@@ -926,7 +814,13 @@ SAVE_CURRENT_ROOM:
 
     mov di, offset ALL_ROOMS_DATA
     add di, ax
+    mov si, offset ORIGINALROOM
+    ; do we use original or target room ?
+    mov al, [ROOM_FLAGS]
+    and al, 10b
+    jz @@use_original_room
     mov si, offset CURRENTROOM
+    @@use_original_room:
     mov cx, 100
     rep movsw
  

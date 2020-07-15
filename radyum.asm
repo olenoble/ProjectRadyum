@@ -47,6 +47,9 @@ INCLUDE keyb.asm
 INCLUDE lbmtool.asm
 INCLUDE grafx.asm
 INCLUDE logic.asm
+INCLUDE roomdata.asm
+INCLUDE roominfo.asm
+INCLUDE miscdata.asm
 
 ; **********************************************
 ; **********************************************
