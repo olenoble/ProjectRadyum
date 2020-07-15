@@ -4,6 +4,7 @@
 ; Constants
 LOCALS @@
 PLAYER_NUMBER   equ 0
+ROOM_START      equ 1
 
 ; **********************************************
 ; **********************************************
@@ -106,7 +107,7 @@ MAIN PROC
     call BLACKOUT
     
     ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
-    call LOADING_SCREEN
+    ;call LOADING_SCREEN
 
     ; set up the various functions to move the character
     call GENERATE_JUMP_POSITION
@@ -122,15 +123,19 @@ MAIN PROC
 
     ; *************************************************************************************************
     ; *************************************************************************************************
-    ; ** Room action
+    ; ** Room action - this is the main game loop
+    mov al, ROOM_START
+    mov [NEXT_ROOM], al
 
     @@new_room:
+    ; update room number
+    mov al, [NEXT_ROOM]
+    mov [ROOM_NUMBER], al
+    call UPLOAD_CURRENT_ROOM
+
     ; Store room data in the video buffer (past 64000 first bytes)
     call STORE_ROOM_VIDEO_RAM
     call SET_ROOM_CLUE
-
-    mov al, 0
-    mov [NEXT_ROOM], al
 
     ; Generate clue area and screen
     mov ax, [SCREEN_PTR+2]
@@ -185,59 +190,13 @@ MAIN PROC
         mov ds, ax
         call DISPLAY_TILESCREEN_FAST
         call DISPLAY_SPRITE_FAST
-        call COPY_VIDEOBUFFER
-        ;call COPY_VIDEOBUFFER_PARTIAL
-
-        ;; redraw the meta tile around the character
-        ;pop ds
-        ;push bx
-        ;mov bx, [CHAR_POS_Y]
-        ;mov di, [CHAR_POS_X]
-        ;and bx, 0FFF0h
-        ;and di, 0FFF0h
-
-        ;push ds
-        ;mov ax, [SCREEN_PTR+2]
-        ;mov ds, ax    
-        
-        ;; need to divide CHAR_POS_X by 16 and multiply x2 --> divide by 8
-        ;mov si, di
-        ;shr si, 3
-        ;; divide bx by 16 to get the row in tile
-        ;; need then to multiply by 40 (20 tiles per row x 2 bytes)
-        ;; since 40 = 32 + 8 --> bx / 16 * 40 = bx * 2 + bx / 2
-
-        ;mov ax, bx
-        ;shl ax, 1
-        ;add si, ax
-        ;mov ax, bx
-        ;shr ax, 1 
-        ;add si, ax
-
-        ;call MULTIPLYx320
-        ;add di, bx
-        ;mov bx, si
-        ;add bx, 320*200 + 200
-        ;call DISPLAY_METATILE_FAST        
+        call COPY_VIDEOBUFFER        
         pop ds
-        ;pop bx
 
         ; check keyboard
         call READ_KEY_NOWAIT
         or al, al
         jnz @@user_input
-
-        ; mov si, offset ITERTEST
-        ; mov al, [si]
-        ; inc al
-        ; mov [si], al
-        ; and al, 11b
-        ; jnz @@wait_for_key_tile
-
-        ; in al, 60h
-        ; mov ah, al
-        ; and ah, 80h
-        ; jz @@user_input
 
         call RESET_CHARACTER_STANCE
         jmp @@wait_for_key_tile
@@ -253,7 +212,8 @@ MAIN PROC
 
         ; check if we changed room
         mov al, [NEXT_ROOM]
-        or al, al
+        mov ah, [ROOM_NUMBER]
+        cmp ah, al
         jz @@still_sameroom
 
         mov ax, [ADJUST_POS_X]
@@ -266,9 +226,10 @@ MAIN PROC
         mov [ADJUST_POS_X], ax
         mov [ADJUST_POS_Y], ax
 
+        call SAVE_CURRENT_ROOM
         mov word ptr [FADEWAITITR], 4
         mov ax, 1
-        call FADEOUT
+        call FADEOUT        
         jmp @@new_room
     
     @@reset_room:

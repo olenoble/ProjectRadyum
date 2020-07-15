@@ -114,7 +114,7 @@ BespokeInt9:
     ;call es:si
     ;pop es
 
-    cli     ; stop all interrupts
+    ;cli     ; stop all interrupts
     push ax
 
     in al, 60h
@@ -150,9 +150,19 @@ BespokeInt9:
         pop bx
         
     @@end_int9:
+
+        ; it seems that this bit below is necessary... but it works without
+        in al, 61h
+        mov ah, al
+        or al, 80h
+        out 61h, al
+        xchg al, ah
+        out 61h, al
+        
+        ; End of interrupt (that is necessary!)
         mov al, 20h
         out 20h, al
     
     pop ax
-    sti
+    ;sti
     iret
