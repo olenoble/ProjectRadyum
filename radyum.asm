@@ -3,7 +3,7 @@
 
 ; Constants
 LOCALS @@
-PLAYER_NUMBER   equ 0
+PLAYER_NUMBER   equ 2
 ROOM_START      equ 1
 
 ; **********************************************
