@@ -4,7 +4,7 @@
         {
             "label": "Compile File in DosBox in dosbox",
             "type": "shell",
-            "command": "D:\\Programs\\DOSBox-0.74-3\\DOSBox.exe D:\\Olivier\\Projects\\Radyum\\GitRadyum\\compile.bat -noconsole -exit",
+            "command": "DOSBox.exe C:\\Users\\Olivier\\Projects\\Radyum\\GitRadyum\\compile.bat -noconsole -exit",
             "group": {
                 "kind": "build",
                 "isDefault": true
