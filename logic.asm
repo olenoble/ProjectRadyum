@@ -482,16 +482,16 @@ VALIDATE_ROOM:
     ; there are 9 words in each row if we ignore the boundaries
     mov al, 8
     @@check_row:
-        mov cx, 9
-        repe cmpsw
+        mov cx, 19
+        repe cmpsb
         ; if cx is not zero, a difference was found somewhere
         or cx, cx        
         jnz @@end_check
 
         ; if zero, let's move to the next row
         ; si and di should be on the boundary of the previous row
-        add si, 2
-        add di, 2
+        add si, 1
+        add di, 1
         dec al
         jnz @@check_row
 
