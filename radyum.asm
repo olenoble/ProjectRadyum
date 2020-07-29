@@ -50,6 +50,7 @@ INCLUDE logic.asm
 INCLUDE roomdata.asm
 INCLUDE roominfo.asm
 INCLUDE miscdata.asm
+INCLUDE passcode.asm
 
 ; **********************************************
 ; **********************************************

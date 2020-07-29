@@ -545,11 +545,75 @@ VALIDATE_ROOM:
     mov ch, 1
     call CHECK_SIDE
 
+    ; Now check if there is a new password attributed after solving
+    mov si, offset PASSCODE_ROOM
+    mov al, [si]
+    or al, al
+    jz @@end_check
+    call ADD_NEW_PASSWORD
+
     @@end_check:
         pop di
         pop cx
         pop es
 
+    ret
+
+
+ADD_NEW_PASSWORD:
+    ; subroutine to add a new password if needed
+    ; AL contains the reference to the password
+    pusha
+    ;mov al, 17
+    ; 8 bytes per password - SI points to the password
+    dec al
+    shl al, 3
+    inc al
+    xor ah, ah
+    mov si, offset ALL_PASSCODE
+    add si, ax
+
+    ; make sure we write it at the right place
+    ; AX will contain the row/columns (AH row and AL column)
+    ; and DI will point to the right position
+    mov di, 14 + offset PASSCODEAREA
+    mov ax, [si + 4]
+    
+    ; we need to multiply AL by 4 (easy)
+    ; and AH by 13 (harder) --> x13 = x8 + x4 + x1
+    xor cx, cx
+    dec al
+    shl al, 2
+    mov cl, al
+
+    dec ah
+    mov al, ah
+    shl ah, 2   ; x4
+    add al, ah  ; adding on top of x1
+    shl ah, 1   ; x8 now
+    add al, ah
+    add cl, al
+    add di, cx
+
+    ; now update the password area
+    push ds
+    pop es
+    mov cl, 3
+    @@update_password_area:
+        xor ah, ah
+        lodsb
+        mov bx, offset LETTER_MAPPING
+        sub ax, 20h
+        add bx, ax
+        mov al, [bx]
+        stosb
+        dec cl
+        jnz @@update_password_area
+
+    mov ax, [SCREEN_PTR+2]
+    call GENERATE_PASSWORDAREA
+
+    popa
     ret
 
 
@@ -616,8 +680,7 @@ GENERATE_CLUEAREA:
 
 GENERATE_PASSWORDAREA:
     ; Generate the password area (bottom left)
-    ; AX contains the tileset reference
-    ; CL contains length of area (in multiples of 8)
+    ; AX contains the tileset reference    
 
     push si
     push dx
@@ -639,6 +702,7 @@ GENERATE_AREA:
     ; SI must point to the tile reference in DS
     ; AX contains the tileset reference
     ; DX contains the horizontal shift reference
+    ; CL contains length of area (in multiples of 8)
 
     ; This is typically a one-off everytime we enter a room - so not time critical
     ; Similar to the room, we store (temporarily) the screen after the video buffer
@@ -664,7 +728,6 @@ GENERATE_AREA:
     shl cl, 2
     add cl, ch
     xor ch, ch
-    ;mov cx, 27 * 5
     rep movsw
 
     ; then we can
@@ -721,7 +784,7 @@ SET_ROOM_CLUE:
     mov si, offset ROOM_CLUE
     mov di, 28 + offset CLUEAREA
 
-    mov cl, 5
+    mov cl, 3
     @@loop_cluearea_cols:
         mov ch, 25
         @@loop_cluearea_rows:

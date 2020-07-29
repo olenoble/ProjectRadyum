@@ -19,6 +19,11 @@ DOWN_DOOR               equ 1eh
 LEFT_DOOR               equ 1fh
 RIGHT_DOOR              equ 1dh
 
+CLOSED_UP_DOOR          equ 0ch
+CLOSED_DOWN_DOOR        equ 0eh
+CLOSED_LEFT_DOOR        equ 0fh
+CLOSED_RIGHT_DOOR       equ 0dh
+
 .DATA 
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Password details
@@ -46,6 +51,16 @@ PASSCODEAREA        db 1ah, 11 dup (1dh), 3ah
                     db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
                     db 1bh, 3 dup (1eh), 1fh, 3 dup (1eh), 1fh, 3 dup (1eh), 3bh
                     db 1ch, 11 dup (3dh), 3ch
+
+                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    ; Pop-up question area about the required passcode
+QUESTIONAREA        db 1ah, 9 dup (1dh), 3ah
+                    db 1bh, 9 dup (1fh), 3bh
+                    db 1bh, 3 dup (1fh), 3 dup (1eh), 3 dup (1fh), 3bh
+                    db 1ch, 9 dup (3dh), 3ch
+
+QUESTIONCODE        db "Code  ", "   "
+SUBMITTEDPASS       db 3 dup (0)
 
                     ; Store the letter mappings - starting from space (20h = 32) - see http://www.asciitable.com/
                     ; Numbers start at 48 - upper case letters at 65 and lower case at 97
