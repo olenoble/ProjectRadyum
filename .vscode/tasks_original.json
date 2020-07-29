@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile File in DosBox in dosbox",
+            "type": "shell",
+            "command": "DOSBox.exe C:\\Users\\Olivier\\Projects\\Radyum\\GitRadyum\\compile.bat -noconsole -exit",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "never"
+            }
+        }
+    ]
+}
