@@ -6,3 +6,5 @@
 stderr.txt
 stdout.txt
 make.bat
+.vscode/tasks.json
+*.json

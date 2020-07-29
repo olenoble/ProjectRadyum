@@ -63,6 +63,19 @@ GET_NEXT_ROOM MACRO
 ENDM
 
 
+GET_PASSWORD_REFERENCE MACRO
+    ; get the corresponding action
+    xor ah, ah
+    mov al, [si + offset TARGETROOM]
+    dec al
+    shl al, 1
+    mov di, offset ACTION_LIST
+    add di, ax
+    inc di
+    mov al, [di]
+ENDM
+
+
 .CODE
 
 GENERATE_JUMP_POSITION:
@@ -154,6 +167,11 @@ MOVE_CHARACTER_LEFT:
     add ax, 16 - CHARACTER_BUFFER_LEFT
     mov [CHAR_POS_X], ax
 
+    ; Password management here
+    ; cmp bh, LEFT_DOOR_CLOSED ; is it a closed door ?
+    ; then  GET_PASSWORD_REFERENCE if it is closed
+    ; if al not zero --> request password (and maybe open door if needed)
+    
     ; is it a door ?
     cmp bh, LEFT_DOOR
     jnz @@all_good
