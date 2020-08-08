@@ -248,7 +248,3 @@ ALL_ROOMS_DATA      db 08h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 0ch, 04
                     db 00h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 03h, 00h
                     db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
                     
-                    
-                    db 400 * (TOTAL_NUMBER_ROOM-10) dup (0)
-
-.CODE

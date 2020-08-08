@@ -29,8 +29,8 @@ CLOSED_RIGHT_DOOR       equ 0dh
                     ; Password details
                     ; Each password is 3 bytes long (1 letter and 2 numbers)
                     ; for each password, we associate a position XY (stored as a byte)
-PASSWORD_LIST       db 27 * 3 dup (0)
-PASSWORD_POSITIONS  db 27 dup (0)
+;PASSWORD_LIST       db 27 * 3 dup (0)
+;PASSWORD_POSITIONS  db 27 dup (0)
 
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Bottom area

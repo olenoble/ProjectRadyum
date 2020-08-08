@@ -18,8 +18,4 @@ ALL_ROOMS_INFO      db 001b,  0, 2, 0, 0, 0, 0, 0, 0, 0, "Il vous manque une cas
                     db 001b, 13, 14, 7, 2, 0, 7, 0, 0, 0, "Le temps est ecoule", "$", (75 - 20) dup (0)
                     db 001b,  0, 15, 0, 0, 0, 0, 0, 0, 0, "", "$", (75 - 1) dup (0)
                     db 001b,  0, 0, 0, 0, 0, 0, 0, 0, 0, "", "$", (75 - 1) dup (0)
-
-                    db 85 * (TOTAL_NUMBER_ROOM-10) dup (0)
-
-.CODE
-
+                    
