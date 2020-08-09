@@ -1,10 +1,16 @@
 .MODEL SMALL
 .386
 
+; Adding music library
+INCLUDELIB      MODPLAY.LIB
+EXTRN           Mod_Driver:FAR,Mod_End_Seg:FAR
+
+
 ; Constants
 LOCALS @@
-PLAYER_NUMBER   equ 2
+PLAYER_NUMBER   equ 1
 ROOM_START      equ 1
+USE_MUSIC       equ 0
 
 ; **********************************************
 ; **********************************************
@@ -14,6 +20,7 @@ ROOM_START      equ 1
 .DATA
 LOADINGSCR  db "c:\INTRO.LBM", 0
 TILESCR     db "c:\GRIDT6.LBM", 0
+MOD_FILE    db "c:\BRIDGET.MOD", 0 ;"INTROII.MOD", 0
 
 FILEINFO    dw 4 dup (0)
 
@@ -51,11 +58,16 @@ INCLUDE roomdata.asm
 INCLUDE roominfo.asm
 INCLUDE miscdata.asm
 INCLUDE passcode.asm
+include music.asm
 
 ; **********************************************
 ; **********************************************
 ; ** Main Loop
 MAIN PROC
+
+    if USE_MUSIC
+        call START_MUSICDRIVER
+    endif
 
     call SETUP
     call INT9_SETUP
@@ -109,7 +121,12 @@ MAIN PROC
     ; start graphic mode and display
     call SWITCH_TO_320x200
     call BLACKOUT
-    
+
+    ; Launch music
+    if USE_MUSIC
+        call START_MUSIC
+    endif
+
     ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
     ;call LOADING_SCREEN
 
@@ -162,7 +179,6 @@ MAIN PROC
     call COPY_VIDEOBUFFER
     pop ds
 
-    ; Fade in is screwed here - check why
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEIN
@@ -266,6 +282,11 @@ MAIN ENDP
 END_GAME:
     ; return INT to their former processes
     call INT9_RESET
+
+    ; stop music
+    if USE_MUSIC
+        call END_MUSICDRIVER
+    endif
     
     ; reset the screen and quit
     call RESET_SCREEN

@@ -7,7 +7,7 @@
 CHARSTYLE           db 10h
 CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
-CHARACTER_MOVE      dw 0004h
+CHARACTER_MOVE      dw 0007h
 
                     ; set to next room if a door was hit
 NEXT_ROOM           db 0
