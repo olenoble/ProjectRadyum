@@ -86,7 +86,6 @@ GENERATE_JUMP_POSITION:
     ; All keys defaults to DO_NOTHING
     mov di, offset JUMP_POS
     mov ax, offset DO_NOTHING
-    ;xchg al, ah
     mov cx, 256
     rep stosw
 
@@ -125,7 +124,7 @@ RESET_CHARACTER_STANCE:
 
 
 MOVE_CHARACTER_LEFT:
-    ; Displace character to the left
+    ; Move character left
 
     ; read the sprite - make sure it points to the right direction
     ; and add some movement
@@ -168,19 +167,21 @@ MOVE_CHARACTER_LEFT:
     mov [CHAR_POS_X], ax
 
     ; Password management here
-    ; cmp bh, LEFT_DOOR_CLOSED ; is it a closed door ?
-    ; then  GET_PASSWORD_REFERENCE if it is closed
-    ; if al not zero --> request password (and maybe open door if needed)
-    
-    ; is it a door ?
-    cmp bh, LEFT_DOOR
-    jnz @@all_good
-    add ax, 16 * 17
-    mov [ADJUST_POS_X], ax
-    mov ax, [CHAR_POS_Y]
-    mov [ADJUST_POS_Y], ax
+    cmp bh, CLOSED_LEFT_DOOR
+    jnz @@not_a_closed_door
 
-    GET_NEXT_ROOM
+    call CHECK_CALL_FOR_PASSWORD
+    
+    @@not_a_closed_door:
+        ; is it an open door ?
+        cmp bh, LEFT_DOOR
+        jnz @@all_good
+        add ax, 16 * 17
+        mov [ADJUST_POS_X], ax
+        mov ax, [CHAR_POS_Y]
+        mov [ADJUST_POS_Y], ax
+
+        GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -191,7 +192,7 @@ MOVE_CHARACTER_LEFT:
 
 
 MOVE_CHARACTER_RIGHT:
-    ; Displace character to the right
+    ; Move character right
 
     ; read the sprite - make sure it points to the right direction
     ; and add some movement
@@ -232,15 +233,22 @@ MOVE_CHARACTER_RIGHT:
     sub ax, 16 - CHARACTER_BUFFER_RIGHT
     mov [CHAR_POS_X], ax
 
-    ; is it a door ?
-    cmp bh, RIGHT_DOOR
-    jnz @@all_good
-    sub ax, 16 * 17
-    mov [ADJUST_POS_X], ax
-    mov ax, [CHAR_POS_Y]
-    mov [ADJUST_POS_Y], ax
+    ; Password management here
+    cmp bh, CLOSED_RIGHT_DOOR
+    jnz @@not_a_closed_door
 
-    GET_NEXT_ROOM
+    call CHECK_CALL_FOR_PASSWORD
+    
+    @@not_a_closed_door:
+        ; is it an open door ?
+        cmp bh, RIGHT_DOOR
+        jnz @@all_good
+        sub ax, 16 * 17
+        mov [ADJUST_POS_X], ax
+        mov ax, [CHAR_POS_Y]
+        mov [ADJUST_POS_Y], ax
+
+        GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -251,7 +259,7 @@ MOVE_CHARACTER_RIGHT:
 
 
 MOVE_CHARACTER_UP:
-    ; Displace character to the up
+    ; Move character up
 
     ; read the sprite - make sure it points to the right direction
     ; and add some movement
@@ -293,15 +301,23 @@ MOVE_CHARACTER_UP:
     add ax, 16 - CHARACTER_BUFFER_UP
     mov [CHAR_POS_Y], ax
 
-    ; is it a door ?
-    cmp bh, UP_DOOR
-    jnz @@all_good
-    add ax, 16 * 7
-    mov [ADJUST_POS_Y], ax
-    mov ax, [CHAR_POS_X]
-    mov [ADJUST_POS_X], ax
+    ; Password management here
+    cmp bh, CLOSED_UP_DOOR
+    jnz @@not_a_closed_door
 
-    GET_NEXT_ROOM
+    call CHECK_CALL_FOR_PASSWORD
+    
+    @@not_a_closed_door:
+        ; is it an open door ?
+        cmp bh, UP_DOOR
+        jnz @@all_good
+    
+        add ax, 16 * 7
+        mov [ADJUST_POS_Y], ax
+        mov ax, [CHAR_POS_X]
+        mov [ADJUST_POS_X], ax
+
+        GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -312,7 +328,7 @@ MOVE_CHARACTER_UP:
 
 
 MOVE_CHARACTER_DOWN:
-    ; Displace character to the up
+    ; Move character down
 
     ; read the sprite - make sure it points to the right direction
     ; and add some movement
@@ -355,15 +371,22 @@ MOVE_CHARACTER_DOWN:
     sub ax, 16 - CHARACTER_BUFFER_DOWN
     mov [CHAR_POS_Y], ax
 
-    ; is it a door ?
-    cmp bh, DOWN_DOOR
-    jnz @@all_good
-    sub ax, 16 * 7
-    mov [ADJUST_POS_Y], ax
-    mov ax, [CHAR_POS_X]
-    mov [ADJUST_POS_X], ax
+    ; Password management here
+    cmp bh, CLOSED_DOWN_DOOR
+    jnz @@not_a_closed_door
 
-    GET_NEXT_ROOM
+    call CHECK_CALL_FOR_PASSWORD
+    
+    @@not_a_closed_door:
+        ; is it an open door ?
+        cmp bh, DOWN_DOOR
+        jnz @@all_good
+        sub ax, 16 * 7
+        mov [ADJUST_POS_Y], ax
+        mov ax, [CHAR_POS_X]
+        mov [ADJUST_POS_X], ax
+
+        GET_NEXT_ROOM
 
     @@all_good:
         pop bx
@@ -564,7 +587,7 @@ ADD_NEW_PASSWORD:
     ; subroutine to add a new password if needed
     ; AL contains the reference to the password
     pusha
-    ;mov al, 17
+    
     ; 8 bytes per password - SI points to the password
     dec al
     shl al, 3
@@ -638,10 +661,11 @@ CHECK_SIDE:
         or al, al
         jnz @@notadoor
         dec di
-        ; now flag as open
-        mov al, [di]
-        or al, 10000000b
-        mov [di], al
+        
+        ;; now flag as open - deprecated (not sure this flag serves any purpose)
+        ;mov al, [di]
+        ;or al, 10000000b
+        ;mov [di], al
         
         ; and change the tile - the target room and current room are 200 bytes away
         sub si, 200
@@ -765,6 +789,55 @@ GENERATE_AREA:
     pop cx
     pop bx
     pop ax
+    ret
+
+
+GENERATE_QUESTIONAREA:
+    ; Generate the question area - most of it is hardcoded here. Logic is similar to clue/password area
+    ; This is typically a one-off everytime we find a password-locked room    
+    push cx
+    push si
+    push di
+    push ds
+    push es
+        
+    mov cx, VGA_RAM_LOCATION
+    mov es, cx
+
+    ; move the tile config to the end of buffer
+    ; this is to avoid using 3 segment (video buffer + screen tiles config + tiles gfx)
+    ; tile config is 20 * 10 bytes = 200 bytes (there is 65535 - 64000 = 1535 bytes left)
+    mov si, offset QUESTIONAREA
+    mov di, 320 * 200 + 600
+    mov cx, 4 * 13
+    rep movsw
+
+    ; then this time, no need to store it. We can simply generate the sprite in the video buffer
+    mov cx, [SCREEN_PTR+2]
+    mov ds, cx
+    mov si, 320 * 200 + 600
+    mov di, 108 + (60 * 320)
+
+    mov cl, 4
+    @@loop_sprite8_cols:
+        mov ch, 13
+        @@loop_sprite8_rows:
+            mov bl, es:[si]
+            call DISPLAY_SMALL_SPRITE
+            inc si
+            add di, 8
+            dec ch
+            jnz @@loop_sprite8_rows
+
+        add di, (320 * 8) - (8 * 13)
+        dec cl
+        jnz @@loop_sprite8_cols
+
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop cx
     ret
 
 
@@ -926,3 +999,152 @@ SAVE_CURRENT_ROOM:
     popa
     ret
 
+
+CHECK_CALL_FOR_PASSWORD:
+    push ax
+    push bx
+    push cx
+
+    ; get the corresponding action
+    xor ah, ah
+    mov al, [si + offset TARGETROOM]
+    dec al
+    shl al, 1
+    mov di, offset ACTION_LIST
+    add di, ax
+    inc di
+    mov al, [di]
+    
+    or al, al
+    jz @@no_pass_required
+
+    ; what is the reference to the passcode ?
+    mov di, offset ALL_PASSCODE
+    xor ah, ah
+    dec al
+    shl al, 3
+    add di, ax
+
+    mov bx, offset QUESTIONAREA
+    ; first get the letter
+    mov al, [di + 4]
+    sub al, 41h
+    mov [bx + 20], al
+
+    ; then each number
+    mov al, [di + 5]
+    add al, 40h
+    mov [bx + 21], al
+    mov al, [di + 6]
+    add al, 40h
+    mov [bx + 22], al
+
+    call GENERATE_QUESTIONAREA
+
+    ; ok so now - because of the keyboard layout, my bespoke int9 is not super adequate to read input
+    ; from user - I'll deactivate it now, use int 16h and will reactivate afterwards
+    call INT9_RESET
+
+    xor bx, bx
+    mov cl, 3
+    @@get_code_input:
+        mov ah, 10h
+        int 16h
+
+        ; if lower case, we just shift it back to upper case
+        cmp al, 61h
+        jb @@lower_case
+        sub al, 20h
+    
+    @@lower_case:
+        mov [bx + offset SUBMITTEDPASS], al
+        inc bx
+
+        ; map to character
+        xor ah, ah
+        sub al, 20h
+        mov di, offset LETTER_MAPPING
+        add di, ax
+        mov ch, [di]
+
+        ; now need to print it
+        push ds
+        push es
+        push bx
+
+        ; locate the current position for the key
+        mov di, 108 + (60 * 320) + (320 * 16) + (4 * 8)
+        ; need to add bx * 8 to di
+        shl bx, 3
+        add di, bx
+
+        mov ax, VGA_RAM_LOCATION
+        mov es, ax
+        mov ax, [SCREEN_PTR+2]
+        mov ds, ax
+
+        ; this is the sprite number
+        mov bl, ch
+        call DISPLAY_SMALL_SPRITE
+        pop bx
+        pop es
+        pop ds
+
+        dec cl
+        or cl, cl
+        jnz @@get_code_input
+
+        ; now we need to check whether the password is fine
+        ; first get the passcode again (macro ??)
+        xor ah, ah
+        mov al, [si + offset TARGETROOM]
+        dec al
+        shl al, 1
+        mov di, offset ACTION_LIST
+        add di, ax
+        inc di
+        mov al, [di]
+        
+        ; what is the reference to the passcode ?
+        mov di, offset ALL_PASSCODE
+        xor ah, ah
+        dec al
+        shl al, 3
+        add di, ax
+        inc di
+
+        push si
+        push es
+
+        push ds
+        pop es
+        mov si, offset SUBMITTEDPASS
+        mov cx, 3
+        repe cmpsb
+
+        pop es
+        pop si
+
+        or cx, cx
+        jnz @@wrong_password
+
+        ; this is correct! - now change the door (both current and original!)
+        mov al, [si + offset CURRENTROOM]
+        or al, 10h
+        mov [si + offset CURRENTROOM], al
+
+        mov al, [si + offset ORIGINALROOM]
+        or al, 10h
+        mov [si + offset ORIGINALROOM], al
+
+        ; update room in memory
+        call STORE_ROOM_VIDEO_RAM
+
+    @@wrong_password:
+        ; reinstate INT9
+        call INT9_SETUP
+    @@no_pass_required:
+        pop cx
+        pop bx
+        pop ax
+        ret

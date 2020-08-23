@@ -101,6 +101,25 @@ READ_KEY_NOWAIT:
     @@return_no_key:
     ret
 
+PURGE_KEY_BUFFER:
+    ; purge the key buffer (effectively just setting KEY_BUFFER_PTR to 0)
+    ; disable interrput first to make sure keyboard doesn't get call at the same time
+    cli
+    push ax
+    push di
+    push ds
+
+    mov ax, @DATA
+    mov ds, ax
+    mov di, offset KEY_BUFFER_PTR
+    mov [di], ax
+
+    pop ds
+    pop di
+    pop ax
+    sti
+    ret
+
 
 ; ***************************************************************************************
 ; ** Below is my new int9

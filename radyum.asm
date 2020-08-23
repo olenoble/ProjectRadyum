@@ -8,7 +8,7 @@ EXTRN           Mod_Driver:FAR,Mod_End_Seg:FAR
 
 ; Constants
 LOCALS @@
-PLAYER_NUMBER   equ 1
+PLAYER_NUMBER   equ 0
 ROOM_START      equ 1
 USE_MUSIC       equ 0
 
@@ -210,7 +210,7 @@ MAIN PROC
         mov ds, ax
         call DISPLAY_TILESCREEN_FAST
         call DISPLAY_SPRITE_FAST
-        call COPY_VIDEOBUFFER        
+        call COPY_VIDEOBUFFER
         pop ds
 
         ; check keyboard
