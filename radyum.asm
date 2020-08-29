@@ -1,25 +1,26 @@
 .MODEL SMALL
 .386
 
-; Adding music library
-INCLUDELIB      MODPLAY.LIB
-EXTRN           Mod_Driver:FAR,Mod_End_Seg:FAR
-
-
 ; Constants
 LOCALS @@
 PLAYER_NUMBER   equ 0
-ROOM_START      equ 1
+ROOM_START      equ 6
 USE_MUSIC       equ 0
+
+; Adding music library
+if USE_MUSIC
+    INCLUDELIB      MODPLAY.LIB
+    EXTRN           Mod_Driver:FAR,Mod_End_Seg:FAR
+endif
 
 ; **********************************************
 ; **********************************************
 ; ** STACK + DATA here
-.STACK 4096
+.STACK 512
 
 .DATA
 LOADINGSCR  db "c:\INTRO.LBM", 0
-TILESCR     db "c:\GRIDT6.LBM", 0
+TILESCR     db "c:\GRIDT7.LBM", 0
 MOD_FILE    db "c:\BRIDGET.MOD", 0 ;"INTROII.MOD", 0
 
 FILEINFO    dw 4 dup (0)
@@ -58,7 +59,10 @@ INCLUDE roomdata.asm
 INCLUDE roominfo.asm
 INCLUDE miscdata.asm
 INCLUDE passcode.asm
-include music.asm
+
+if USE_MUSIC
+    include music.asm
+endif
 
 ; **********************************************
 ; **********************************************

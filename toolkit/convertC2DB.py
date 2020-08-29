@@ -6,7 +6,7 @@ from info import ROOM_INFO, DEFAULT_INFO
 
 if __name__ == '__main__':
     filename = 'rooms.c'
-    maxroom = 10
+    maxroom = 16
 
     ################################################################################################################
     ################################################################################################################
@@ -17,13 +17,27 @@ if __name__ == '__main__':
     mapping = {door_refs[0]: ['0ch', '0fh', '0dh', '0eh', '00h'],  # closed doors (top, left, right, bottom, target)
                door_refs[1]: ['1ch', '1fh', '1dh', '1eh', '00h'],  # open doors (top, left, right, bottom, target)
                '0xffffffef': ['04h', '06h', '07h', '05h', '00h'],  # walls (top, left, right, bottom, target)
-               '0xffff3f1b': ['02h'],  # Blue modifiable tile
-               '0xffff0fef': ['03h'],  # Red modifiable tile
+
+               '0xff837f83': ['07h'] * 4 + ['00h'],  # additional walls (facing left)
+               '0xffa3a39f': ['06h'] * 4 + ['00h'],  # additional walls (facing right)
+               '0xff3b3b3b': ['04h'] * 4 + ['00h'],  # additional walls (facing down)
+               '0xff1f3b43': ['05h'] * 4 + ['00h'],  # additional walls (facing up)
+
+               '0xff939393': ['08h'] * 4 + ['00h'],  # additional corner (top left)
+               '0xffababab': ['09h'] * 4 + ['00h'],  # additional corner (top right)
+               '0xff1b373b': ['0bh'] * 4 + ['00h'],  # additional corner (bottom left)
+               '0xff23434b': ['0ah'] * 4 + ['00h'],  # additional corner (bottom right)
+
+               # '0xff8cffeb': ['09h', '07h', '07h', '0ah', '00h'],  # additional walls (facing left)
+               # '0xff26ffd8': ['08h', '06h', '06h', '0bh', '00h'],  # additional walls (facing right)
+               '0xffff3f1b': ['02h'] * 4 + ['00h'],  # Blue modifiable tile
+               '0xffff0fef': ['03h'] * 4 + ['00h'],  # Red modifiable tile
                }
     corners = ['08h', '09h', '0bh', '0ah']  # corners (top left, top right, bottom left, bottom right)
 
     shift_map = {0: 0, (room_height - 1): 3}
     edge_map = {0: 1, (room_length - 1): 2}
+
     shift_map_target = {0: 4, (room_height - 1): 4}
     edge_map_target = {0: 4, (room_length - 1): 4}
     spacing = 20
@@ -36,6 +50,9 @@ if __name__ == '__main__':
              '                    ; 400 bytes per room (20x10 for current and for target room)\n\n' + \
              '                    ; Room 1\nALL_ROOMS_DATA      '
 
+    data_ending = '\n\n                    db 400 * (TOTAL_NUMBER_ROOM-%i) dup (0)\n\n' \
+                  '.CODE'
+
     header_info = '; ***************************************************************************************\n' + \
                   '; ***************************************************************************************\n' + \
                   '; ** Room data - contains only room data (starting + target)\n' + \
@@ -45,6 +62,10 @@ if __name__ == '__main__':
                   '                    ; for the info 2 bytes (flags + code) & 8 bytes for actions - ' \
                   '25*3 bytes for the message = 85 bytes per room\n' + \
                   'ALL_ROOMS_INFO      '
+
+    info_ending = '\n\n                    db 85 * (TOTAL_NUMBER_ROOM-%i) dup (0)\n\n' \
+                  '.CODE'
+
     info_default = '001b, '
     info_endclue = ', "$", (75 - %s) dup (0)'
 
@@ -141,10 +162,12 @@ if __name__ == '__main__':
         roomiter += 1
 
     # write file
+    output += data_ending % maxroom
     with open('roomdata.asm', 'w') as f:
         f.write(output)
 
-    with open('rooinfo.asm', 'w') as f:
+    output_info += info_ending % maxroom
+    with open('roominfo.asm', 'w') as f:
         f.write(output_info)
 
     print('Done ')
