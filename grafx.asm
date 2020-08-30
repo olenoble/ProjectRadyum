@@ -3,20 +3,20 @@
 ; ** Graphics tools
 ; ** Require setup.asm & lbmtool.asm
 
-MAX_LBM_FILES   equ 3
+MAX_LBM_FILES   equ 2
 VGA_RAM_LOCATION equ 0a000h
 
 .DATA
 ; We can allow up to 10 color maps (limit completely arbitrary - about 4kb)
-COLORMAPS    db 3 * 256 * MAX_LBM_FILES dup (0)
-SCREEN_PTR   dw MAX_LBM_FILES dup (0)           ; segments to be allocated for images
-FADEWAITITR  dw 4
-IMG_COUNTER  db 0
-VIDEO_BUFFER dw 0
-TEMP_RGB     db 3 dup (0)
-BUFFER_SHIFT dw 0h
+COLORMAPS           db 3 * 256 * MAX_LBM_FILES dup (0)
+SCREEN_PTR          dw MAX_LBM_FILES dup (0)           ; segments to be allocated for images
+FADEWAITITR         dw 4
+IMG_COUNTER         db 0
+VIDEO_BUFFER        dw 0
+TEMP_RGB            db 3 dup (0)
+BUFFER_SHIFT        dw 0h
 
-ERR_BUFFER   db "Could not allocate memory for the video buffer", 13, 10, "$"
+ERR_BUFFER          db "Could not allocate memory for the video buffer", 13, 10, "$"
 
 ; ************************************************************************************
 ; ** A few macros

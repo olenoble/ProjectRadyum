@@ -126,12 +126,14 @@ PURGE_KEY_BUFFER:
 BespokeInt9:
 
     ; if you want to keep calling the previous interrupt - add something like this
+    ;push si
     ;push es
-    ;mov si, [OLDINT9]
-    ;mov ax, [OLDINT9 + 2 ]
+    ;mov si, [OLD_INT9_ADDR]
+    ;mov ax, [OLD_INT9_ADDR + 2]
     ;mov es, ax
     ;call es:si
     ;pop es
+    ;pop si
 
     ;cli     ; stop all interrupts
     push ax

@@ -13,7 +13,6 @@ TO DO (REQUIRED)<br><br>
 <br><br>
 TO DO (If enough time)<br><br>
 <ol>
-<li>Find a way to reset color palette after a cycle (otherwise colors look crap) 
 <li>Change loading screen to use the tiles instead ??<br>
 <li>Need to rethink the keyboard management (poorly reactive) - maybe read keyboard on a timed basis ? or use a system with a single entry buffer but that checks when the last pressed key is no longer pressed ? <br>
 </ol>

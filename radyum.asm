@@ -4,7 +4,7 @@
 ; Constants
 LOCALS @@
 PLAYER_NUMBER   equ 0
-ROOM_START      equ 6
+ROOM_START      equ 1
 USE_MUSIC       equ 0
 
 ; Adding music library
@@ -19,13 +19,12 @@ endif
 .STACK 512
 
 .DATA
-LOADINGSCR  db "c:\INTRO.LBM", 0
-TILESCR     db "c:\GRIDT7.LBM", 0
-MOD_FILE    db "c:\BRIDGET.MOD", 0 ;"INTROII.MOD", 0
-
-FILEINFO    dw 4 dup (0)
-
-MSG_WAITKEY db 13, 10, "Press Any Key...", "$"
+LOADINGSCR          db "c:\INTRO.LBM", 0
+COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
+TILESCR             db "c:\GRIDT7.LBM", 0
+MOD_FILE            db "c:\BRIDGET.MOD", 0 ;"INTROII.MOD", 0
+FILEINFO            dw 4 dup (0)
+MSG_WAITKEY         db 13, 10, "Press Any Key...", "$"
 
 ; size and pointer to memory allocated to game
 ; we assign a temporary zone, MAX_LBM_FILES image buffers, 1 video buffers --> all 64kb
@@ -131,6 +130,14 @@ MAIN PROC
         call START_MUSIC
     endif
 
+    ; let's backup the palettes first - so we can easily reset them after a cycle
+    mov si, offset COLORMAPS
+    mov di, offset COLORMAPS_BCKUP
+    push ds
+    pop es
+    mov cx, 3 * 128 * MAX_LBM_FILES
+    rep movsw
+
     ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
     ;call LOADING_SCREEN
 
@@ -182,6 +189,17 @@ MAIN PROC
     call DISPLAY_TILESCREEN_FAST
     call COPY_VIDEOBUFFER
     pop ds
+
+    ; reset palette - not really sure why I need to save es here
+    ; but it crashes if I don't ...
+    push es
+    mov di, offset COLORMAPS
+    mov si, offset COLORMAPS_BCKUP
+    push ds
+    pop es
+    mov cx, 3 * 128 * MAX_LBM_FILES
+    rep movsw
+    pop es
 
     mov word ptr [FADEWAITITR], 4
     mov ax, 1

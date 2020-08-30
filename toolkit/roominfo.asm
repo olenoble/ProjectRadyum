@@ -22,7 +22,7 @@ ALL_ROOMS_INFO      db 001b,  0, 2, 0, 0, 0, 0, 0, 0, 0, "Il vous manque une cas
                     db 001b,  3, 18, 0, 6, 0, 11, 0, 0, 0, "Par ici la sortie", "$", (75 - 18) dup (0)
                     db 001b, 23, 19, 0, 0, 0, 0, 0, 0, 0, "Kori o tokasu", "$", (75 - 14) dup (0)
                     db 001b, 15, 15, 0, 8, 0, 0, 0, 0, 0, "Retour a la racine", "$", (75 - 19) dup (0)
-                    db 001b,  0, 16, 0, 16, 0, 9, 0, 14, 0, "A l'identique.            Mais surtout a gauche", "$", (75 - 48) dup (0)
+                    db 001b,  0, 16, 0, 16, 0, 9, 0, 14, 0, "A l'identique.           Mais surtout a gauche", "$", (75 - 47) dup (0)
                     db 001b,  9, 17, 0, 22, 0, 15, 0, 15, 0, "Dans la continuite", "$", (75 - 19) dup (0)
                     
 
