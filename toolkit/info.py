@@ -73,4 +73,29 @@ ROOM_INFO = {1: {'ROOMPASS': 0,
                   'CLUE': 'Dans la continuite',
                   },
 
+             19: {'ROOMPASS': 22,
+                  'DOORPASS': {},
+                  'CLUE': 'America !',
+                  },
+
+             20: {'ROOMPASS': 16,
+                  'DOORPASS': {2: 23},
+                  'CLUE': 'Transcendance',
+                  },
+
+             26: {'ROOMPASS': 0,
+                  'DOORPASS': {},
+                  'CLUE': 'This is the end',
+                  },
+
+             32: {'ROOMPASS': 0,
+                  'DOORPASS': {2: 5},
+                  'CLUE': 'Il vous manque une case',
+                  },
+
+             36: {'ROOMPASS': 26,
+                  'DOORPASS': {},
+                  'CLUE': 'Gliders... Game of Life',
+                  },
+
              }
