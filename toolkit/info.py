@@ -72,25 +72,88 @@ ROOM_INFO = {1: {'ROOMPASS': 0,
                   'DOORPASS': {},
                   'CLUE': 'Dans la continuite',
                   },
-
-             19: {'ROOMPASS': 22,
+             17: {'ROOMPASS': 0,
+                  'DOORPASS': {},
+                  'CLUE': 'Un miroir vers l\'infini',
+                  },
+             18: {'ROOMPASS': 2,
+                  'DOORPASS': {},
+                  'CLUE': 'Remplissez moi jusqu\'au bord',
+                  },
+             19: {'ROOMPASS': 20,
                   'DOORPASS': {},
                   'CLUE': 'America !',
                   },
-
              20: {'ROOMPASS': 16,
                   'DOORPASS': {2: 23},
                   'CLUE': 'Transcendance',
                   },
+             21: {'ROOMPASS': 12,
+                  'DOORPASS': {},
+                  'CLUE': 'Franchir la ligne',
+                  },
 
+             22: {'ROOMPASS': 0,  # TODO
+                  'DOORPASS': {},
+                  'CLUE': 'TODO',
+                  },
+             23: {'ROOMPASS': 4,  # TODO
+                  'DOORPASS': {},
+                  'CLUE': 'TODO',
+                  },
+
+             24: {'ROOMPASS': 19,
+                  'DOORPASS': {},
+                  'CLUE': 'Sequence a completer',
+                  },
+             25: {'ROOMPASS': 14,
+                  'DOORPASS': {},
+                  'CLUE': 'Complementaire',
+                  },
              26: {'ROOMPASS': 0,
                   'DOORPASS': {},
                   'CLUE': 'This is the end',
                   },
 
+             27: {'ROOMPASS': 21,  # TODO
+                  'DOORPASS': {},
+                  'CLUE': 'TODO',
+                  },
+
+             28: {'ROOMPASS': 18,
+                  'DOORPASS': {},
+                  'CLUE': 'XOR a droite',
+                  },
+             29: {'ROOMPASS': 1,
+                  'DOORPASS': {},
+                  'CLUE': 'Miroir Miroir',
+                  },
+             30: {'ROOMPASS': 22,
+                  'DOORPASS': {},
+                  'CLUE': '4 rotation a droite',
+                  },
+
+             31: {'ROOMPASS': 24,  # TODO
+                  'DOORPASS': {},
+                  'CLUE': 'TODO',
+                  },
+
              32: {'ROOMPASS': 0,
                   'DOORPASS': {2: 5},
                   'CLUE': 'Il vous manque une case',
+                  },
+
+             33: {'ROOMPASS': 25,  # TODO
+                  'DOORPASS': {},
+                  'CLUE': 'TODO',
+                  },
+             34: {'ROOMPASS': 0,  # TODO
+                  'DOORPASS': {},
+                  'CLUE': 'TODO',
+                  },
+             35: {'ROOMPASS': 27,  # TODO
+                  'DOORPASS': {},
+                  'CLUE': 'TODO',
                   },
 
              36: {'ROOMPASS': 26,
@@ -99,3 +162,20 @@ ROOM_INFO = {1: {'ROOMPASS': 0,
                   },
 
              }
+
+
+if __name__ == "__main__":
+    nopass = 0
+    allpass = [1] * 27
+
+    for i in range(1, 37):
+        r = ROOM_INFO[i]
+        if r['ROOMPASS'] == 0:
+            nopass += 1
+        else:
+            allpass[r['ROOMPASS'] - 1] -= 1
+
+    # Check the allocation of password when solving room - nopass should be 36 - 27 = 9
+    # allpass should be a vector of zeros
+    print(nopass)
+    print(allpass)

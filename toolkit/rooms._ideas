@@ -15,26 +15,28 @@ Rooms idea (from bottom right - going up then left)
 14. Retour a la racine (kanji livre -> arbre)
 15. Pattern matching (right side must match)
 16. Dans la continuite
-17. *
-18. *
+17. Miroir vers l'infini
+18. Fill me up
 19. America
 20. Trancendant (2.7182)
-21. *
-22. *
-23. *
-24. *
-25. * Contrarien (bottom to do opposite)
+21. Franchir la ligne
+22. * Soyez Negatif (changing all tiles in the room)
+23. * Soyez Negatif (changing all tiles in the room)
+24. Sequence
+25. Complementaire
 26. Ending room (nothing to solve)
 27. * 
-28. * XOR (only right one will solve it)
-29. * Mirroir Mirroir (bottom pattern mirror symmetry)
-30. *
+28. XOR a droite (only right one will solve it)
+29. Miroir Miroir (bottom pattern mirror symmetry)
+30. Rotation a droite
 31. *
 32. Starting room (il vous manque une case)
 33. *
-34. * Soyez Negatif (changing all tiles in the room)
-35. *
+34. *
+35. * Soyez Negatif (changing all tiles in the room)
 36. Glider... Game of Life
+
+
 
 
 7. 4 bit sequence
