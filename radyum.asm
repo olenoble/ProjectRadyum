@@ -3,7 +3,7 @@
 
 ; Constants
 LOCALS @@
-PLAYER_NUMBER   equ 21   ; 0 to 2
+PLAYER_NUMBER   equ 2   ; 0 to 2
 ROOM_START      equ 32   ; 0 -> 1 / 1 -> 6 / 2 -> 32
 USE_MUSIC       equ 0
 
@@ -21,7 +21,7 @@ endif
 .DATA
 LOADINGSCR          db "c:\INTRO.LBM", 0
 COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
-TILESCR             db "c:\GRIDT7.LBM", 0
+TILESCR             db "c:\GRIDT8.LBM", 0
 MOD_FILE            db "c:\BRIDGET.MOD", 0 ;"INTROII.MOD", 0
 FILEINFO            dw 4 dup (0)
 MSG_WAITKEY         db 13, 10, "Press Any Key...", "$"
