@@ -160,6 +160,7 @@ MOVE_CHARACTER_LEFT:
 
     mov bl, [si + offset CURRENTROOM]
     mov bh, bl
+    and bl, 0fh
     and bl, 11111100b
     jz @@all_good
     shl ax, 4
@@ -227,6 +228,7 @@ MOVE_CHARACTER_RIGHT:
 
     mov bl, [si + offset CURRENTROOM]
     mov bh, bl
+    and bl, 0fh
     and bl, 11111100b
     jz @@all_good
     shl ax, 4
@@ -295,6 +297,7 @@ MOVE_CHARACTER_UP:
 
     mov bl, [si + offset CURRENTROOM]
     mov bh, bl
+    and bl, 0fh
     and bl, 11111100b
     jz @@all_good
     and ax, 0FFF0h
@@ -364,6 +367,7 @@ MOVE_CHARACTER_DOWN:
 
     mov bl, [si + offset CURRENTROOM]
     mov bh, bl
+    and bl, 0fh
     and bl, 11111100b
     jz @@all_good
     add ax, 16
