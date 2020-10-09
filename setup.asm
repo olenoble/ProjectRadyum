@@ -4,7 +4,7 @@
 
 .DATA
 ERRORMSG_MEMRESIZE  db "Could not resize memory", 13, 10, "$"
-GOODBYE_MSG         db 13, 10, 13, 10, "Thanks for using Radyum", 13, 10, "$"
+GOODBYE_MSG         db 13, 10, 13, 10, "Thank you for playing. Hope you enjoyed it !", 13, 10, "$"
 
 
 .CODE

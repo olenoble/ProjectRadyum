@@ -3,9 +3,9 @@
 
 ; Constants
 LOCALS @@
-PLAYER_NUMBER   equ 2   ; 0 to 2
+PLAYER_NUMBER   equ 2    ; 0 to 2
 ROOM_START      equ 32   ; 0 -> 1 / 1 -> 6 / 2 -> 32
-USE_MUSIC       equ 0
+USE_MUSIC       equ 0    ; if 0 no music
 
 ; Adding music library
 if USE_MUSIC
