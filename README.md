@@ -16,3 +16,11 @@ TO DO (If enough time)<br><br>
 <li>Change loading screen to use the tiles instead ??<br>
 <li>Use a QR code (pixel art ?) to link to the website  / gift cards ??
 </ol>
+
+<br><br>
+Minor fixes<br><br>
+<ol>
+<li>D "Par ici la sortie" --> arrow needs to go left<br>
+<li>Final room --> replace all tiles with cycles with plain pink<br>
+<li>Final room --> why is it looking for passcode ?<br>
+</ol>

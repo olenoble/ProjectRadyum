@@ -130,7 +130,11 @@ MAIN PROC
         call START_MUSIC
     endif
 
-    ; let's backup the palettes first - so we can easily reset them after a cycle
+    ; set the right color for the character
+    mov ax, 1
+    call UPDATE_PLAYER_COLORS
+
+    ; let's backup the palettes as well - so we can easily reset them after a cycle
     mov si, offset COLORMAPS
     mov di, offset COLORMAPS_BCKUP
     push ds
@@ -148,10 +152,6 @@ MAIN PROC
     xor ax, ax
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
-
-    ; set the right color for the character
-    mov ax, 1
-    call UPDATE_PLAYER_COLORS
 
     ; *************************************************************************************************
     ; *************************************************************************************************

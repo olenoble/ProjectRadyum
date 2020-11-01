@@ -33,7 +33,7 @@ ALL_ROOMS_INFO      db 001b,  0, 2, 0, 0, 0, 0, 0, 0, 0, "Il vous manque une cas
                     db 001b,  4, 24, 0, 17, 12, 29, 26, 0, 0, "C'est bon les beignets. Mais je prefererais un donut", "$", (75 - 53) dup (0)
                     db 001b, 19, 30, 0, 18, 0, 23, 20, 0, 0, "Vive La reine ?", "$", (75 - 16) dup (0)
                     db 001b, 14, 26, 0, 19, 0, 31, 0, 19, 0, "Complementaire", "$", (75 - 15) dup (0)
-                    db 111b,  0, 0, 0, 0, 0, 0, 0, 0, 0, "This is the end. Go towards the light!", "$", (75 - 39) dup (0)
+                    db 111b,  0, 26, 0, 26, 0, 26, 0, 0, 0, "This is the end. Go towards the light!", "$", (75 - 39) dup (0)
                     db 001b, 21, 28, 0, 33, 0, 26, 0, 26, 14, "Compression horizontale", "$", (75 - 24) dup (0)
                     db 001b, 18, 29, 0, 22, 0, 27, 0, 0, 0, "XOR a droite", "$", (75 - 13) dup (0)
                     db 001b,  1, 30, 4, 35, 0, 23, 0, 28, 0, "Miroir Miroir", "$", (75 - 14) dup (0)
