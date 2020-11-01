@@ -7,7 +7,7 @@ GAME_ESCAPE_KEY         equ 1
 RESET_KEY               equ 13h
 CHARACTERSPRITE         equ CHARSTYLE
 CHARACTER_STEP          equ 7
-TOTAL_NUMBER_ROOM       equ 50
+TOTAL_NUMBER_ROOM       equ 36
 
 CHARACTER_BUFFER_LEFT   equ 3 * 1
 CHARACTER_BUFFER_RIGHT  equ 2 * 1
@@ -25,13 +25,6 @@ CLOSED_LEFT_DOOR        equ 0fh
 CLOSED_RIGHT_DOOR       equ 0dh
 
 .DATA 
-                    ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    ; Password details
-                    ; Each password is 3 bytes long (1 letter and 2 numbers)
-                    ; for each password, we associate a position XY (stored as a byte)
-;PASSWORD_LIST       db 27 * 3 dup (0)
-;PASSWORD_POSITIONS  db 27 dup (0)
-
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Bottom area
 CLUEAREA            db 1ah, 25 dup (1dh), 3ah

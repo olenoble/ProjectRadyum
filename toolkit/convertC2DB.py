@@ -1,7 +1,6 @@
 ################################################################################################################
 ################################################################################################################
 # Very basic toolkit to generate roomdata.asm and roominfo.asm
-import os
 from info import ROOM_INFO, DEFAULT_INFO
 
 if __name__ == '__main__':
@@ -42,6 +41,8 @@ if __name__ == '__main__':
     shift_map_target = {0: 4, (room_height - 1): 4}
     edge_map_target = {0: 4, (room_length - 1): 4}
     spacing = 20
+    is_complete = True
+
     header = '; ***************************************************************************************\n' + \
              '; ***************************************************************************************\n' + \
              '; ** Room data - contains only room data (starting + target)\n' + \
@@ -51,7 +52,8 @@ if __name__ == '__main__':
              '                    ; 400 bytes per room (20x10 for current and for target room)\n\n' + \
              '                    ; Room 1\nALL_ROOMS_DATA      '
 
-    data_ending = '\n\n                    db 400 * (TOTAL_NUMBER_ROOM-%i) dup (0)\n\n' \
+    data_ending = '\n\n                    ' + ('; ' if is_complete else '') + \
+                  'db 400 * (TOTAL_NUMBER_ROOM-%i) dup (0)\n\n' \
                   '.CODE'
 
     header_info = '; ***************************************************************************************\n' + \
@@ -64,7 +66,8 @@ if __name__ == '__main__':
                   '25*3 bytes for the message = 85 bytes per room\n' + \
                   'ALL_ROOMS_INFO      '
 
-    info_ending = '\n\n                    db 85 * (TOTAL_NUMBER_ROOM-%i) dup (0)\n\n' \
+    info_ending = '\n\n                    ' + ('; ' if is_complete else '') + \
+                  'db 85 * (TOTAL_NUMBER_ROOM-%i) dup (0)\n\n' \
                   '.CODE'
 
     info_default = '001b, '

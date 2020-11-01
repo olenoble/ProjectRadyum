@@ -146,20 +146,45 @@ MOVE_CHARACTER_LEFT:
     ; Collision detection - did we hit a wall ?
     ; Find corresponding tile of middle left side --> we need to have (CHAR_POS_Y + 8) / 16 * 20 + CHAR_POS_X / 16
     push bx
+    push dx
     mov si, [CHAR_POS_Y]
     add si, 8
-    shr si, 4
+
+    ; keep an eye on the edge case (if middle of sprite is past the bottom of tile, we check the tile above, otherwise we check the tile below)
+    ; if 4th bit in SI is set, we will shift SI by -1 later, otherwise we shift by 1
+    mov dx, si
+    and dx, 1000b
+    shr dx, 2
+    dec dx
+    neg dx
+    shl dx, 4
+
+    ;shr si, 4
+    ;mov bx, si
+    ;shl si, 4
+    ;shl bx, 2
+    and si, 0fff0h
     mov bx, si
-    shl si, 4
-    shl bx, 2
+    shr bx, 2
+
     add si, bx
 
     add ax, CHARACTER_BUFFER_LEFT
     shr ax, 4
     add si, ax
 
+    ; check next tile
+    add si, dx
     mov bl, [si + offset CURRENTROOM]
     mov bh, bl
+
+    ; check middle tile
+    sub si, dx
+    mov bl, [si + offset CURRENTROOM]
+    ;;xchg bh, bl
+    ;;or bl, bh
+    mov bh, bl
+    
     and bl, 0fh
     and bl, 11111100b
     jz @@all_good
@@ -185,6 +210,7 @@ MOVE_CHARACTER_LEFT:
         GET_NEXT_ROOM
 
     @@all_good:
+        pop dx
         pop bx
         pop si
         pop ax
@@ -222,7 +248,7 @@ MOVE_CHARACTER_RIGHT:
     shl bx, 2
     add si, bx
 
-    add ax, 16 + CHARACTER_BUFFER_RIGHT
+    add ax, 16 - CHARACTER_BUFFER_RIGHT
     shr ax, 4
     add si, ax
 
@@ -283,7 +309,7 @@ MOVE_CHARACTER_UP:
     ; Find corresponding tile of upper middle side --> we need to have CHAR_POS_Y / 16 * 20 + (CHAR_POS_X + 8) / 16
     push bx
     mov si, ax
-    add si, CHARACTER_BUFFER_UP
+    sub si, CHARACTER_BUFFER_UP
     shr si, 4
     mov bx, si
     shl si, 4
