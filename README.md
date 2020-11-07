@@ -6,12 +6,12 @@ TO DO (REQUIRED)<br><br>
 <li>Move room data to file with option to save upon leaving<br>
 <li>When releasing code - remove all c:\ (only useful for TD)<br>
 <li>Check if rooms are all good - beta testing<br>
+<li>Change QR code to point to gift page - and give passwords to users. Create blog page for gift (with encrypted zipped up data)<br>
 </ol>
 
 <br><br>
 TO DO (If enough time)<br><br>
 <ol>
-<li>Change loading screen to use the tiles instead ??<br>
 </ol>
 
 <br><br>

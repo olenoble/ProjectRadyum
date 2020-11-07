@@ -12,6 +12,11 @@ msg_memsize         db "Vous avez $"
 msg_memsize2        db "ko de memoire disponible", 13, 10, "$"
 msg_dosver          db "Vous utilisez DOS $"
 msg_dosver2         db 13, 10, "$"
+msg_explanation     db 13, 10, "Controles:", 13, 10
+                    db "Fleches haut/bas/droite/gauche ==>  direction", 13, 10
+                    db "Espace                         ==>  change couleur", 13, 10
+                    db "R                              ==>  recommence", 13, 10
+                    db "Echap.                         ==>  quitter le jeu", 13, 10, "$"
 
 .CODE
 INTRO:
@@ -20,7 +25,7 @@ INTRO:
     mov dx, offset msg_welcome
     mov ah, 9
     int 21h
-    
+
     ; call int 12h to check how much memory we've got
     ; ax will contain the memory size
     ; int 12h
@@ -83,6 +88,13 @@ INTRO:
     mov dx, offset msg_dosver2
     mov ah, 9
     int 21h
+
+    ; Now explain the controls
+    mov dx, offset msg_explanation
+    mov ah, 9
+    int 21h
+   
+
     
     ret
 

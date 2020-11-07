@@ -3,8 +3,8 @@
 
 ; Constants
 LOCALS @@
-PLAYER_NUMBER   equ 2    ; 0 to 2
-ROOM_START      equ 26    ; 0 -> 1 / 1 -> 6 / 2 -> 32
+PLAYER_NUMBER   equ 1    ; 0 to 2
+ROOM_START      equ 1    ; 0 -> 1 / 1 -> 6 / 2 -> 32
 USE_MUSIC       equ 0    ; if 0 no music
 
 ; Adding music library
@@ -21,7 +21,7 @@ FINAL_ROOM      equ 26
 .STACK 512
 
 .DATA
-LOADINGSCR          db "INTRO.LBM", 0
+LOADINGSCR          db "INTRO2.LBM", 0
 COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
 TILESCR             db "GRIDT8.LBM", 0
 MOD_FILE            db "BRIDGET.MOD", 0 ;"INTROII.MOD", 0
@@ -149,7 +149,7 @@ MAIN PROC
     rep movsw
 
     ; Launch the "loading screen" (nothing really loads - but it's a nice intro)
-    ;call LOADING_SCREEN
+    call LOADING_SCREEN
 
     ; set up the various functions to move the character
     call GENERATE_JUMP_POSITION
@@ -158,10 +158,6 @@ MAIN PROC
     xor ax, ax
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
-
-    ; TO REMOVE!!!!
-    mov [CHAR_POS_X], 32
-    mov [CHAR_POS_Y], 32
 
     ; *************************************************************************************************
     ; *************************************************************************************************

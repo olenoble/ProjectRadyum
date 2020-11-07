@@ -9,8 +9,8 @@ ECHO /_____/____/\___/\__,_/ .___/\___/    /_/ /_/ /_/\___/   \____/\____/____/
 ECHO                      /_/                                              
 ECHO -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 ECHO.
-ECHO.    
-
+ECHO.
+ECHO Escape the 80s  - Le jeu
 CHOICE /C:ONQ Voulez-vous utiliser la derniere sauvegarde (oui/non/quitter)
 ECHO.
 IF ERRORLEVEL 3 GOTO TheEnd

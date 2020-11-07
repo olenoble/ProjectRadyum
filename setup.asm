@@ -56,22 +56,24 @@ ENDPROG:
     or al, al
     jz @@nope_didnt_win
     call WINNING_MESSAGE
+    jmp @@quit_prog
     
     @@nope_didnt_win:
         mov dx, offset GOODBYE_MSG
         mov ah, 09h
         int 21h
 
-    ; free memory
-    mov ax, [BUFFER_PTR]
-    mov es, ax
-    mov ah, 49h
-    int 21h
-    
-    call MemoryStillAvail
-    
-    mov ah, 4ch
-    int 21h
+    @@quit_prog:
+        ; free memory
+        mov ax, [BUFFER_PTR]
+        mov es, ax
+        mov ah, 49h
+        int 21h
+        
+        call MemoryStillAvail
+        
+        mov ah, 4ch
+        int 21h
 
 
 ; ********************************************************************************************
