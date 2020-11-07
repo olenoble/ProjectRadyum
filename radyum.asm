@@ -21,12 +21,12 @@ FINAL_ROOM      equ 26
 .STACK 512
 
 .DATA
-LOADINGSCR          db "c:\INTRO.LBM", 0
+LOADINGSCR          db "INTRO.LBM", 0
 COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
-TILESCR             db "c:\GRIDT8.LBM", 0
+TILESCR             db "GRIDT8.LBM", 0
 MOD_FILE            db "BRIDGET.MOD", 0 ;"INTROII.MOD", 0
 FILEINFO            dw 4 dup (0)
-MSG_WAITKEY         db 13, 10, "Press Any Key...", "$"
+MSG_WAITKEY         db 13, 10, "Appuyer sur une touche...", "$"
 
 ; size and pointer to memory allocated to game
 ; we assign a temporary zone, MAX_LBM_FILES image buffers, 1 video buffers --> all 64kb
@@ -63,6 +63,7 @@ INCLUDE roomdata.asm
 INCLUDE roominfo.asm
 INCLUDE miscdata.asm
 INCLUDE passcode.asm
+INCLUDE winner.asm
 
 if USE_MUSIC
     include music.asm
@@ -455,7 +456,7 @@ CHECK_REACH_END:
 	cmp al, 2
 	ja @@not_at_end
 
-    mov [IS_WINNER], 1
+    mov byte ptr [IS_WINNER], 1
     mov word ptr [FADEWAITITR], 7
     mov ax, 1
     call FADETOWHITE

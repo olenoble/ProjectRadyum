@@ -4,7 +4,7 @@
 
 .DATA
 ERRORMSG_MEMRESIZE  db "Could not resize memory", 13, 10, "$"
-GOODBYE_MSG         db 13, 10, 13, 10, "Thank you for playing. Hope you enjoyed it !", 13, 10, "$"
+GOODBYE_MSG         db "Merci d'avoir joue. Vos progres ont ete sauvegardes!", 13, 10, "$"
 
 
 .CODE
@@ -50,10 +50,17 @@ RESET_SCREEN:
 ENDPROG:
     ; This is simply the end of program
     ; reset the screen - display a nice message and exit back to DOS
+
+    ; have we won ??!?
+    mov al, [IS_WINNER]
+    or al, al
+    jz @@nope_didnt_win
+    call WINNING_MESSAGE
     
-    mov dx, offset GOODBYE_MSG
-    mov ah, 09h
-    int 21h
+    @@nope_didnt_win:
+        mov dx, offset GOODBYE_MSG
+        mov ah, 09h
+        int 21h
 
     ; free memory
     mov ax, [BUFFER_PTR]

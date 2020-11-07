@@ -7,10 +7,10 @@
 memory_size         db 5 dup(0)
 dos_major           db 2 dup (0)
 dos_minor           db 2 dup (0)
-msg_welcome         db "Welcome Player ", (49 + PLAYER_NUMBER), 13, 10, "$"
-msg_memsize         db "You have $"
-msg_memsize2        db "kb of memory available", 13, 10, "$"
-msg_dosver          db "You are running DOS $"
+msg_welcome         db "Bienvenue Joueur ", (49 + PLAYER_NUMBER), 13, 10, "$"
+msg_memsize         db "Vous avez $"
+msg_memsize2        db "ko de memoire disponible", 13, 10, "$"
+msg_dosver          db "Vous utilisez DOS $"
 msg_dosver2         db 13, 10, "$"
 
 .CODE

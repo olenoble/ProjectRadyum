@@ -11,15 +11,15 @@ ECHO -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 ECHO.
 ECHO.    
 
-CHOICE /C:YNQ Do you want to load last saved Game (yes/no/quit)
+CHOICE /C:ONQ Voulez-vous utiliser la derniere sauvegarde (oui/non/quitter)
 ECHO.
 IF ERRORLEVEL 3 GOTO TheEnd
 IF ERRORLEVEL 2 GOTO ResetGame
 IF ERRORLEVEL 1 GOTO GoAhead
 :ResetGame
-ECHO Resetting Game
+ECHO Sauvegarde existante effacee...
 :GoAhead
-ECHO Running Escape the 80s now
+ECHO Lancement de "Escape the 80s"...
 ECHO.
 RADYUM.EXE
 :TheEnd
