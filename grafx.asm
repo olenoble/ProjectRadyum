@@ -491,7 +491,7 @@ BLACKOUT:
     
   
 FADEOUT:
-    ; Create a fade-in effect
+    ; Create a fade-out effect
     ; AL is the color map number
     pusha
     
@@ -548,7 +548,66 @@ FADEOUT:
     popa
     ret
  
-   
+
+FADETOWHITE:
+    ; Create a fade-to-white-effect
+    ; AL is the color map number
+    pusha
+    
+    ; get the palette offset (and save it)
+    POINT_TO_PALETTE
+    mov di, ax
+    
+    ; bl = max number of iteration (4bit coded so 1111b is enough)
+    ; we start at ah = 1111b
+    mov bl, 1111b
+    xor ah, ah
+    @@FadeToWhiteIterate:
+        ; now set colors 
+        mov cx, 256 * 3
+        
+        ; get the offset back
+        mov si, di
+        
+        mov dx, 03c8h
+        xor al, al
+        out dx, al
+        
+        mov dx, 03c9h
+        cli
+        @@FadToWhiteColorLoop:
+            ; set the red/green/blue component
+            lodsb
+            ror al, 4
+            and al, 1111b
+            ; if smaller than ah, use ah - otherwise use rgb
+            ; this is effectively max(rgb, ah)
+            cmp al, ah
+            ja @@use_al_fadetowhite
+            mov al, ah
+        @@use_al_fadetowhite:
+            shl al, 2
+            out dx, al
+
+            loop @@FadToWhiteColorLoop
+
+        sti
+        
+        ; then we wait a few iteration of the Vsync scan
+        ; so it doesn't go too fast
+        mov cx, [FADEWAITITR]
+        @@FadeToWhiteMultipleScan:
+            DETECT_VSYNC
+            loop @@FadeToWhiteMultipleScan
+        
+        inc ah
+        dec bl
+        jnz @@FadeToWhiteIterate
+    
+    popa
+    ret
+
+
 FADEIN:
     ; Create a fade-in effect
     ; AL is the color map number

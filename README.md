@@ -4,7 +4,6 @@ TO DO (REQUIRED)<br><br>
 <ol>
 <li>Music (looks like library works but might be an issue of memory mgmt, especially with small files - also need to speed up the code with music - use trick to only redraw area around character unless change in screen)<br>
 <li>Add nice feature for the last room (fade to white, etc... showing closed doors)<br>
-<li>Improve collision detection (check entire side)<br>
 <li>Add proper credits at the end (instead of thank you for...) - that includes path to gift / blog<br>
 <li>Move room data to file with option to save upon leaving<br>
 <li>When releasing code - remove all c:\ (only useful for TD)<br>
@@ -20,7 +19,5 @@ TO DO (If enough time)<br><br>
 <br><br>
 Minor fixes<br><br>
 <ol>
-<li>D "Par ici la sortie" --> arrow needs to go left<br>
-<li>Final room --> replace all tiles with cycles with plain pink<br>
-<li>Final room --> why is it looking for passcode ?<br>
+<li>Improve collision detection (check entire side)<br>
 </ol>

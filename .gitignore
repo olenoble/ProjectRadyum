@@ -8,3 +8,9 @@ stdout.txt
 make.bat
 .vscode/tasks.json
 
+player1/GRIDT8.LBM
+player1/INTRO.LBM
+player2/GRIDT8.LBM
+player2/INTRO.LBM
+player3/GRIDT8.LBM
+player3/INTRO.LBM

@@ -3,8 +3,8 @@
 
 ; Constants
 LOCALS @@
-PLAYER_NUMBER   equ 0    ; 0 to 2
-ROOM_START      equ 1    ; 0 -> 1 / 1 -> 6 / 2 -> 32
+PLAYER_NUMBER   equ 2    ; 0 to 2
+ROOM_START      equ 26    ; 0 -> 1 / 1 -> 6 / 2 -> 32
 USE_MUSIC       equ 0    ; if 0 no music
 
 ; Adding music library
@@ -13,15 +13,17 @@ if USE_MUSIC
     EXTRN           Mod_Driver:FAR,Mod_End_Seg:FAR
 endif
 
+FINAL_ROOM      equ 26
+
 ; **********************************************
 ; **********************************************
 ; ** STACK + DATA here
 .STACK 512
 
 .DATA
-LOADINGSCR          db "INTRO.LBM", 0
+LOADINGSCR          db "c:\INTRO.LBM", 0
 COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
-TILESCR             db "GRIDT8.LBM", 0
+TILESCR             db "c:\GRIDT8.LBM", 0
 MOD_FILE            db "BRIDGET.MOD", 0 ;"INTROII.MOD", 0
 FILEINFO            dw 4 dup (0)
 MSG_WAITKEY         db 13, 10, "Press Any Key...", "$"
@@ -40,6 +42,9 @@ PLAYER_COLORS       db 204, 0, 76, 178, 0, 76
                     db 204, 204, 0, 178, 178, 0
                     db 0, 204, 76, 0, 178, 76
 
+
+; Winning flag
+IS_WINNER           db 0
 
 ; **********************************************
 ; **********************************************
@@ -152,6 +157,10 @@ MAIN PROC
     xor ax, ax
     call CLEAR_VIDEOBUFFER
     call COPY_VIDEOBUFFER
+
+    ; TO REMOVE!!!!
+    mov [CHAR_POS_X], 32
+    mov [CHAR_POS_Y], 32
 
     ; *************************************************************************************************
     ; *************************************************************************************************
@@ -290,12 +299,18 @@ MAIN PROC
         call STORE_ROOM_VIDEO_RAM
 
     @@still_sameroom:
+        ; need to check here if we reach the end
+        ; we need ROOM_NUMBER == 26 and CHAR_POS_X in [] and CHAR_POS_Y in []
+        call CHECK_REACH_END
         jmp @@wait_for_key_tile
 
 @@exit_game_loop:
     mov word ptr [FADEWAITITR], 4
     mov ax, 1
     call FADEOUT
+
+    ; this is where we save down the data
+
     jmp END_GAME
 
 MAIN ENDP
@@ -415,5 +430,38 @@ UPDATE_PLAYER_COLORS:
     rep movsb
 
     ret
+
+
+CHECK_REACH_END:
+    ; are we in the final room ?
+    mov al, [ROOM_NUMBER]
+    cmp al, FINAL_ROOM
+    jne @@not_at_end
+
+    ; if we are, are we within the center ?
+    ; check X first - it needs to be between the 36th and 38th (incl.) quarter-tiles
+    mov ax, [CHAR_POS_X]
+    shr ax, 2
+    sub al, 36
+
+	cmp al, 2
+	ja @@not_at_end
+
+    ; then check Y - must be between the 16th and 18th (incl.) quarter-tiles
+    mov ax, [CHAR_POS_Y]
+    shr ax, 2
+    sub al, 16
+
+	cmp al, 2
+	ja @@not_at_end
+
+    mov [IS_WINNER], 1
+    mov word ptr [FADEWAITITR], 7
+    mov ax, 1
+    call FADETOWHITE
+    jmp END_GAME
+
+    @@not_at_end:
+        ret
 
 END MAIN
