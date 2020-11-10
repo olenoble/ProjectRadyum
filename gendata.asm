@@ -42,7 +42,6 @@ MAIN PROC
     mov ax, @DATA
     mov ds, ax
 
-
     ; create the file
     mov dx, offset FILENAME
     mov ah, 3ch

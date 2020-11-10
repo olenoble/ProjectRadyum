@@ -10,6 +10,9 @@ ERR_FILE1     db "Could not open file", 13, 10, "$"
 ERR_FILE2     db "Could not read file", 13, 10, "$"
 ERR_FILE3     db "Could not close file", 13, 10, "$"
 
+ROOM_FILENAME            db "ROOM.DAT"
+ROOM_FILEHANDLE          dw 0
+
 .CODE
 
 OPEN_FILE:
@@ -69,8 +72,48 @@ OPEN_FILE:
     jc CantClose
 
     popa
-    ret 
-    
+    ret
+
+
+GENERATE_ROOM_FILE:
+
+    ; create the file
+    mov dx, offset ROOM_FILENAME
+    mov ah, 3ch
+    xor cx, cx
+    int 21h
+
+    mov [ROOM_FILEHANDLE], ax
+
+    ; first of all, write the player info
+    mov ah, 40h
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 6
+    mov dx, offset PLAYER_NUMBER
+    int 21h
+
+    ; now save the room data
+    mov ah, 40h
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 36 * 2 * 20 * 10
+    mov dx, offset ALL_ROOMS_DATA
+    int 21h
+
+    ; and then the room info
+    mov ah, 40h
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 36 * (10 + 75)
+    mov dx, offset ALL_ROOMS_INFO
+    int 21h
+
+
+    ; now close the file
+    mov bx, [ROOM_FILEHANDLE]
+    mov ah, 3eh
+    int 21h
+    ret
+
+
 ; ********************************************************************************************
 ; ********************************************************************************************
 ; ** Various functions
