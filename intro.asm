@@ -7,7 +7,12 @@
 memory_size         db 5 dup(0)
 dos_major           db 2 dup (0)
 dos_minor           db 2 dup (0)
-msg_welcome         db "Bienvenue Joueur ", (49 + PLAYER_NUMBER), 13, 10, "$"
+
+msg_welcome         db "Bienvenue Joueur "      ;, (49 + PLAYER_NUMBER), 13, 10, "$"
+msg_welcome_player  db 49  ; add PLAYER_NUMBER
+                    db 13, 10, "$"
+
+
 msg_memsize         db "Vous avez $"
 msg_memsize2        db "ko de memoire disponible", 13, 10, "$"
 msg_dosver          db "Vous utilisez DOS $"
@@ -21,7 +26,11 @@ msg_explanation     db 13, 10, "Controles:", 13, 10
 .CODE
 INTRO:
     ; simple welcome piece of code
-    ; Frankly not very well written but that's not critical   
+    ; Frankly not very well written but that's not critical
+    mov al, [PLAYER_NUMBER]
+    add al, 49
+    mov [msg_welcome_player], al
+
     mov dx, offset msg_welcome
     mov ah, 9
     int 21h

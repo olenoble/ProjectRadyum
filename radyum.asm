@@ -3,9 +3,8 @@
 
 ; Constants
 LOCALS @@
-PLAYER_NUMBER   equ 2    ; 0 to 2
-ROOM_START      equ 32    ; 0 -> 1 / 1 -> 6 / 2 -> 32
 USE_MUSIC       equ 0    ; if 0 no music
+FINAL_ROOM      equ 26
 
 ; Adding music library
 if USE_MUSIC
@@ -13,14 +12,16 @@ if USE_MUSIC
     EXTRN           Mod_Driver:FAR,Mod_End_Seg:FAR
 endif
 
-FINAL_ROOM      equ 26
-
 ; **********************************************
 ; **********************************************
 ; ** STACK + DATA here
 .STACK 512
 
 .DATA
+; player + room
+PLAYER_NUMBER       db 2    ; 0 to 2
+ROOM_START          db 32   ; 0 -> 1 / 1 -> 6 / 2 -> 32
+
 LOADINGSCR          db "INTRO2.LBM", 0
 COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
 TILESCR             db "GRIDT9.LBM", 0
@@ -162,7 +163,7 @@ MAIN PROC
     ; *************************************************************************************************
     ; *************************************************************************************************
     ; ** Room action - this is the main game loop
-    mov al, ROOM_START
+    mov al, [ROOM_START]
     mov [NEXT_ROOM], al
 
     @@new_room:
@@ -415,7 +416,7 @@ UPDATE_PLAYER_COLORS:
     mov si, offset PLAYER_COLORS
     ; need to multiply by 6 the player number to get the right colors
     ; x6 = x4 + x2
-    mov al, PLAYER_NUMBER
+    mov al, [PLAYER_NUMBER]
     mov ah, al
     shl al, 2
     shl ah, 1

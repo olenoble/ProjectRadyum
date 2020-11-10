@@ -3,7 +3,7 @@
 ; ** Graphics tools
 ; ** Require setup.asm & lbmtool.asm
 
-MAX_LBM_FILES   equ 2
+MAX_LBM_FILES    equ 2
 VGA_RAM_LOCATION equ 0a000h
 
 .DATA
