@@ -452,7 +452,6 @@ PRESS_SPACE:
     mov ah, al
     and ah, 10b
     shr ah, 1
-    ;xor al, 1b
     xor al, ah
     mov [si + offset CURRENTROOM], al
 

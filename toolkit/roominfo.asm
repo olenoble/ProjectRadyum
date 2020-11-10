@@ -40,8 +40,8 @@ ALL_ROOMS_INFO      db 001b,  0, 2, 0, 0, 0, 0, 0, 0, 0, "Il vous manque une cas
                     db 001b, 22, 24, 9, 29, 0, 0, 0, 0, 0, "4 rotations a droite", "$", (75 - 21) dup (0)
                     db 001b, 24, 32, 0, 25, 7, 0, 0, 0, 0, "Trop rapide... Reduit le tempo par deux", "$", (75 - 40) dup (0)
                     db 001b,  0, 33, 0, 31, 15, 0, 0, 0, 0, "Il vous manque une case", "$", (75 - 24) dup (0)
-                    db 001b, 25, 34, 17, 27, 18, 32, 0, 0, 0, "Rotation a 45 degres.", "$", (75 - 22) dup (0)
-                    db 001b,  0, 35, 0, 33, 0, 0, 0, 0, 0, "Pas content, content", "$", (75 - 21) dup (0)
+                    db 001b, 25, 34, 17, 27, 18, 32, 0, 0, 0, "Rotation a 45 degres", "$", (75 - 21) dup (0)
+                    db 001b,  0, 35, 0, 33, 0, 0, 0, 0, 0, "Pas Content. Content", "$", (75 - 21) dup (0)
                     db 001b, 27, 36, 10, 29, 11, 34, 0, 0, 0, "Completez l'escargot", "$", (75 - 21) dup (0)
                     db 001b, 26, 35, 0, 0, 0, 0, 0, 0, 0, "Gliders... Game of Life", "$", (75 - 24) dup (0)
                     

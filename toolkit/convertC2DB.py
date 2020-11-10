@@ -6,7 +6,7 @@ from info import ROOM_INFO, DEFAULT_INFO
 if __name__ == '__main__':
     filename = 'rooms.c'
     maxroom = 36
-
+    # 70h, 71h
     ################################################################################################################
     ################################################################################################################
     # All variables
@@ -31,7 +31,12 @@ if __name__ == '__main__':
                # '0xff26ffd8': ['08h', '06h', '06h', '0bh', '00h'],  # additional walls (facing right)
                '0xffff3f1b': ['02h'] * 4 + ['00h'],  # Blue modifiable tile
                '0xffff0fef': ['03h'] * 4 + ['00h'],  # Red modifiable tile
-               '0xff007fff': ['50h'] * 4 + ['00h']   # Final square
+               '0xff007fff': ['50h'] * 4 + ['00h'],  # Final square
+
+               '0xff532f00': ['70h'] * 4 + ['00h'],  # Blue non-modifiable tile
+               '0xff3f004b': ['71h'] * 4 + ['00h'],  # Red non-modifiable tile
+
+
                }
     corners = ['08h', '09h', '0bh', '0ah']  # corners (top left, top right, bottom left, bottom right)
 
