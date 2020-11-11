@@ -1,3 +1,5 @@
+; ******************************************************************************************************************************************
+; this is not included per se in the code - it just saves down the final room to override it (python tool doesn't generate it well)
 
                     ; Room 26
                     db 08h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 04h, 09h

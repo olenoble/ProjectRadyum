@@ -40,3 +40,34 @@ ALL_PASSCODE        db  1, "G97", "D", 1, 1, 0
 
 .CODE
 
+ADD_PREVIOUS_PASSWORDS:
+    ; code will browse ROOM_INFO and figure out whether to add previous password
+    push ax
+    push si
+
+    mov si, offset ALL_ROOMS_INFO
+    mov ah, 36
+
+    @@loop_over_roominfo:
+        ; check if room was solved - if second bit is off, room is unsolved
+        mov al, [si]
+        and al, 10b
+        or al, al
+        jz @@move_next_room
+
+        ; if solved, was there a code ? if next byte is 0 -> no code
+        mov al, [si + 1]
+        or al, al
+        jz @@move_next_room
+
+        call ADD_NEW_PASSWORD
+
+        @@move_next_room:
+            add si, 85
+        
+        dec ah
+        jnz @@loop_over_roominfo
+
+    pop si
+    pop ax
+    ret

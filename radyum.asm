@@ -22,9 +22,9 @@ endif
 PLAYER_NUMBER       db 2    ; 0 to 2
 ROOM_START          db 32   ; 0 -> 1 / 1 -> 6 / 2 -> 32
 
-LOADINGSCR          db "c:\INTRO2.LBM", 0
+LOADINGSCR          db "INTRO2.LBM", 0
 COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
-TILESCR             db "c:\GRIDT9.LBM", 0
+TILESCR             db "GRIDT9.LBM", 0
 MOD_FILE            db "BRIDGET.MOD", 0 ;"INTROII.MOD", 0
 FILEINFO            dw 4 dup (0)
 MSG_WAITKEY         db 13, 10, "Appuyer sur une touche...", "$"
@@ -81,6 +81,9 @@ MAIN PROC
 
     call SETUP
     call INT9_SETUP
+    
+    ; let's read the ROOM.DAT file to update player+position+achievements
+    call USE_ROOM_FILE
     call INTRO
 
     ; set DF to 0 by default
@@ -102,8 +105,10 @@ MAIN PROC
     call ALLOCATE_IMG_PTR
     mov [MEM_PTR_END], bx
 
-    ; let's read the ROOM.DAT file to update player+position+achievements
-    ;call USE_ROOM_FILE
+    ; we need now to update the previously found password
+    mov byte ptr [DISPLAY_PASSWORD], 0
+    call ADD_PREVIOUS_PASSWORDS
+    mov byte ptr [DISPLAY_PASSWORD], 1
 
     ; open the loading screen file
     mov dx, offset LOADINGSCR

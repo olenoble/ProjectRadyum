@@ -17,7 +17,7 @@ ERR_ROOM3   db "Could not close ROOM file", 13, 10, "$"
 ERR_ROOM4   db "Could not open ROOM file", 13, 10, "$"
 
 
-ROOM_FILENAME            db "C:\ROOM.DAT"
+ROOM_FILENAME            db "ROOM.DAT", 0
 ROOM_FILEHANDLE          dw 0
 
 .CODE

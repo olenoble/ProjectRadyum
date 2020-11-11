@@ -16,6 +16,9 @@ NEXT_ROOM           db 0
 ADJUST_POS_X        dw 0
 ADJUST_POS_Y        dw 0
 
+                    ; If 1 - the newly added password in ADD_NEW_PASSWORD are displayed immmediately
+DISPLAY_PASSWORD    db 1
+
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Current room details
 ROOM_NUMBER         db 0
@@ -664,11 +667,16 @@ ADD_NEW_PASSWORD:
         dec cl
         jnz @@update_password_area
 
-    mov ax, [SCREEN_PTR+2]
+    ; do we need to display it ?
+    mov al, [DISPLAY_PASSWORD]
+    or al, al
+    jz @@no_pass_display
+    mov ax, [SCREEN_PTR+2]    
     call GENERATE_PASSWORDAREA
 
-    popa
-    ret
+    @@no_pass_display:
+        popa
+        ret
 
 
 CHECK_SIDE:
