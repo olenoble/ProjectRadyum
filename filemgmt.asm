@@ -89,6 +89,9 @@ SAVE_ROOM_FILE:
     mov ax, @DATA
     mov ds, ax
 
+    ; make sure current room is saved
+    call SAVE_CURRENT_ROOM
+
     ; open the file
     mov dx, offset ROOM_FILENAME
     mov ax, 3d02h
