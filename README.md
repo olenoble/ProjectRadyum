@@ -3,7 +3,6 @@
 TO DO (REQUIRED)<br><br>
 <ol>
 <li>Music (looks like library works but might be an issue of memory mgmt, especially with small files - also need to speed up the code with music - use trick to only redraw area around character unless change in screen)<br>
-<li>Saving run -> update batch file to read/overwrite saves
 <li>When releasing code - remove all c:\ (only useful for TD)<br>
 <li>Change QR code to point to gift page. Create blog page for gift (with encrypted zipped up data)<br>
 </ol>
