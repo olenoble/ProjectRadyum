@@ -5,6 +5,8 @@
 
 .DATA 
 CHARSTYLE           db 10h
+
+                    ; For saving purposes - keep CHAR_POS_X / CHAR_POS_Y together in that order!
 CHAR_POS_X          dw 160
 CHAR_POS_Y          dw 64
 CHARACTER_MOVE      dw 0007h

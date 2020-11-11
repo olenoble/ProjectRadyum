@@ -3,14 +3,21 @@
 ; ** Tools for file management
 ; ** Require setup.asm
 
-; ** TODO --> we only read 1 segment at the moment....
-
 .DATA
-ERR_FILE1     db "Could not open file", 13, 10, "$"
-ERR_FILE2     db "Could not read file", 13, 10, "$"
-ERR_FILE3     db "Could not close file", 13, 10, "$"
+            ; A little repetitive (I could have used generic messages using the file name more explicitely)
+            ; just a little lazy right now....  
+ERR_FILE1   db "Could not open IMG file", 13, 10, "$"
+ERR_FILE2   db "Could not read IMG file", 13, 10, "$"
+ERR_FILE3   db "Could not close IMG file", 13, 10, "$"
 
-ROOM_FILENAME            db "ROOM.DAT"
+ERR_ROOM1   db "Could not read ROOM file", 13, 10, "$"
+ERR_ROOM2   db "Could not write ROOM file", 13, 10, "$"
+ERR_ROOM3   db "Could not close ROOM file", 13, 10, "$"
+
+ERR_ROOM4   db "Could not open ROOM file", 13, 10, "$"
+
+
+ROOM_FILENAME            db "C:\ROOM.DAT"
 ROOM_FILEHANDLE          dw 0
 
 .CODE
@@ -75,22 +82,42 @@ OPEN_FILE:
     ret
 
 
-GENERATE_ROOM_FILE:
+SAVE_ROOM_FILE:
+    ; This is where we save the game upon exiting
+    pusha 
 
-    ; create the file
+    mov ax, @DATA
+    mov ds, ax
+
+    ; open the file
     mov dx, offset ROOM_FILENAME
-    mov ah, 3ch
-    xor cx, cx
+    mov ax, 3d02h
     int 21h
+    jc CantOpenRoom
 
     mov [ROOM_FILEHANDLE], ax
 
-    ; first of all, write the player info
+    ; we write (in that order) - player number, room number, pos X and pos Y
     mov ah, 40h
     mov bx, [ROOM_FILEHANDLE]
-    mov cx, 6
+    mov cx, 1
     mov dx, offset PLAYER_NUMBER
+    int 21h  
+    jc CantWriteRoom
+
+    mov ah, 40h
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 1
+    mov dx, offset ROOM_NUMBER
     int 21h
+    jc CantWriteRoom
+
+    mov ah, 40h
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 4
+    mov dx, offset CHAR_POS_X
+    int 21h
+    jc CantWriteRoom
 
     ; now save the room data
     mov ah, 40h
@@ -98,6 +125,7 @@ GENERATE_ROOM_FILE:
     mov cx, 36 * 2 * 20 * 10
     mov dx, offset ALL_ROOMS_DATA
     int 21h
+    jc CantWriteRoom
 
     ; and then the room info
     mov ah, 40h
@@ -105,12 +133,81 @@ GENERATE_ROOM_FILE:
     mov cx, 36 * (10 + 75)
     mov dx, offset ALL_ROOMS_INFO
     int 21h
-
+    jc CantWriteRoom
 
     ; now close the file
     mov bx, [ROOM_FILEHANDLE]
     mov ah, 3eh
     int 21h
+    jc CantCloseRoom
+    
+    popa
+    ret
+
+
+USE_ROOM_FILE:
+    ; This is where we read the ROOM.DAT file for the last save
+    pusha
+
+    mov ax, @DATA
+    mov ds, ax
+
+    ; open the file
+    mov dx, offset ROOM_FILENAME
+    mov ax, 3d00h
+    int 21h
+    jc CantOpenRoom
+
+    mov [ROOM_FILEHANDLE], ax
+
+    ; now read every bit of info
+    ; first the player number
+    mov ah, 3fh
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 1
+    mov dx, offset PLAYER_NUMBER
+    int 21h
+    jc CantReadRoom
+
+    ; then the current room
+    mov ah, 3fh
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 1
+    mov dx, offset ROOM_START
+    int 21h
+    jc CantReadRoom
+
+    ; and the player position
+    mov ah, 3fh
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 4
+    mov dx, offset CHAR_POS_X
+    int 21h
+    jc CantReadRoom
+
+    ; now read the room data
+    mov ah, 3fh
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 36 * 2 * 20 * 10
+    mov dx, offset ALL_ROOMS_DATA
+    int 21h
+    jc CantReadRoom
+
+    ; and finally the room info
+    mov ah, 3fh
+    mov bx, [ROOM_FILEHANDLE]
+    mov cx, 36 * (10 + 75)
+    mov dx, offset ALL_ROOMS_INFO
+    int 21h
+    jc CantReadRoom
+
+    ; now close the file
+    mov bx, [ROOM_FILEHANDLE]
+    mov ah, 3eh
+    int 21h
+    jc CantCloseRoom
+    
+    popa
     ret
 
 
@@ -132,6 +229,26 @@ CantClose:
     ; This routine is called if DOS can't close the file
     mov dx, offset ERR_FILE3
     jmp FileErrorMsgAndQuit
+
+CantReadRoom:
+    ; This routine is called if DOS can't access the file
+    mov dx, offset ERR_ROOM1
+    jmp FileErrorMsgAndQuit
+
+CantWriteRoom:
+    ; This routine is called if DOS can't read the file
+    mov dx, offset ERR_ROOM2
+    jmp FileErrorMsgAndQuit
+        
+CantCloseRoom:
+    ; This routine is called if DOS can't close the file
+    mov dx, offset ERR_ROOM3
+    jmp FileErrorMsgAndQuit
+
+CantOpenRoom:
+    ; This routine is called if DOS can't read the file
+    mov dx, offset ERR_ROOM4
+    jmp FileErrorMsgAndQuit   
 
 FileErrorMsgAndQuit:
     ; Routine display the corresponding error message and exit
