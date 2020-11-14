@@ -155,14 +155,14 @@ MOVE_CHARACTER_LEFT:
     mov si, [CHAR_POS_Y]
     add si, 8
 
-    ; keep an eye on the edge case (if middle of sprite is past the bottom of tile, we check the tile above, otherwise we check the tile below)
-    ; if 4th bit in SI is set, we will shift SI by -1 later, otherwise we shift by 1
-    mov dx, si
-    and dx, 1000b
-    shr dx, 2
-    dec dx
-    neg dx
-    shl dx, 4
+    ;;; keep an eye on the edge case (if middle of sprite is past the bottom of tile, we check the tile above, otherwise we check the tile below)
+    ;;; if 4th bit in SI is set, we will shift SI by -1 later, otherwise we shift by 1
+    ;;mov dx, si
+    ;;and dx, 1000b
+    ;;shr dx, 2
+    ;;dec dx
+    ;;neg dx
+    ;;shl dx, 4
 
     ;shr si, 4
     ;mov bx, si
@@ -178,13 +178,13 @@ MOVE_CHARACTER_LEFT:
     shr ax, 4
     add si, ax
 
-    ; check next tile
-    add si, dx
-    mov bl, [si + offset CURRENTROOM]
-    mov bh, bl
+    ;;; check next tile
+    ;;add si, dx
+    ;;mov bl, [si + offset CURRENTROOM]
+    ;;mov bh, bl
 
     ; check middle tile
-    sub si, dx
+    ;;sub si, dx
     mov bl, [si + offset CURRENTROOM]
     ;;xchg bh, bl
     ;;or bl, bh

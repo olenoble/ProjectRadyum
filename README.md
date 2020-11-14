@@ -10,10 +10,10 @@ TO DO (REQUIRED)<br><br>
 <br><br>
 TO DO (If enough time)<br><br>
 <ol>
+<li>Improve collision detection (check entire side)<br>
 </ol>
 
 <br><br>
 Minor fixes<br><br>
 <ol>
-<li>Improve collision detection (check entire side)<br>
 </ol>

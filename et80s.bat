@@ -23,8 +23,8 @@ ECHO.
 GOTO TheEnd
 :ResetGame
 ECHO Sauvegarde existante effacee...
-COPY /Y ROOM.DAT ROOMP.DAT  > nul 2>&1
-COPY /Y ROOM0.DAT ROOM.DAT  > nul 2>&1
+COPY /Y ROOM.DAT ROOMP.DAT  > nul
+COPY /Y ROOM0.DAT ROOM.DAT  > nul
 :GoAhead
 ECHO Lancement de "Escape the 80s"...
 ECHO.
