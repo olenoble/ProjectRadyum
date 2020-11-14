@@ -25,7 +25,7 @@ ROOM_START          db 32   ; 0 -> 1 / 1 -> 6 / 2 -> 32
 LOADINGSCR          db "INTRO2.LBM", 0
 COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
 TILESCR             db "GRIDT9.LBM", 0
-MOD_FILE            db "BRIDGET.MOD", 0 ;"INTROII.MOD", 0
+MOD_FILE            db "MUSIC.MOD", 0
 FILEINFO            dw 4 dup (0)
 MSG_WAITKEY         db 13, 10, "Appuyer sur une touche...", "$"
 
@@ -306,7 +306,7 @@ MAIN PROC
 
     @@still_sameroom:
         ; need to check here if we reach the end
-        ; we need ROOM_NUMBER == 26 and CHAR_POS_X in [] and CHAR_POS_Y in []
+        ; we need ROOM_NUMBER == 26 and CHAR_POS_X / CHAR_POS_Y around the center of the room
         call CHECK_REACH_END
         jmp @@wait_for_key_tile
 
