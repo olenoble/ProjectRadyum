@@ -3,7 +3,7 @@
 
 ; Constants
 LOCALS @@
-USE_MUSIC       equ 0    ; if 0 no music
+USE_MUSIC       equ 1    ; if 0 no music
 FINAL_ROOM      equ 26
 
 ; Adding music library
@@ -18,13 +18,13 @@ endif
 .STACK 512
 
 .DATA
-; player + room
+; player + room - this will be overridden in the ROOM file
 PLAYER_NUMBER       db 2    ; 0 to 2
 ROOM_START          db 32   ; 0 -> 1 / 1 -> 6 / 2 -> 32
 
-LOADINGSCR          db "INTRO2.LBM", 0
+LOADINGSCR          db "INTRO.LBM", 0
 COLORMAPS_BCKUP     db 3 * 256 * MAX_LBM_FILES dup (0)
-TILESCR             db "GRIDT9.LBM", 0
+TILESCR             db "GRID.LBM", 0
 MOD_FILE            db "MUSIC.MOD", 0
 FILEINFO            dw 4 dup (0)
 MSG_WAITKEY         db 13, 10, "Appuyer sur une touche...", "$"
@@ -43,15 +43,87 @@ PLAYER_COLORS       db 204, 0, 76, 178, 0, 76
                     db 204, 204, 0, 178, 178, 0
                     db 0, 204, 76, 0, 178, 76
 
-
 ; Winning flag
 IS_WINNER           db 0
+
+ARBITRARY_MOVE      dw CHARACTER_STEP
 
 ; **********************************************
 ; **********************************************
 ; ** CODE here
-.CODE
 
+; ** Some macros first
+REDRAW_ALL_SCREEN MACRO
+    ; this macro will redraw the whole screen - it will change AX
+    push ds
+    mov ax, [SCREEN_PTR+2]
+    mov ds, ax
+    call DISPLAY_TILESCREEN_FAST
+    call DISPLAY_SPRITE_FAST
+    call COPY_VIDEOBUFFER
+    pop ds
+ENDM
+
+
+REDRAW_PARTIAL MACRO       
+    ; Only redraw the meta tile around the sprite
+    push ds
+    push bx
+    push di
+
+    ; get the position for the top left corner of the character (effectively setting the last 4bits to 0)
+    ; we use here the previous pos to override the metatile
+    mov bx, [PREVIOUS_POS_Y]
+    mov di, [PREVIOUS_POS_X]
+    and bx, 0FFF0h
+    and di, 0FFF0h
+   
+    ; we want SI to point to the tile position in the buffer
+    ; need to divide CHAR_POS_X by 16 and multiply x2 (since there a word per tile) --> divide by 8
+    mov si, di
+    shr si, 3
+    ; divide CHAR_POS_Y by 16 to get the row in tile
+    ; need then to multiply by 40 (20 tiles per row x 2 bytes)
+    ; since 40 = 32 + 8 --> bx / 16 * 40 = bx * 2 + bx / 2
+
+    mov ax, bx
+    shl ax, 1
+    add si, ax
+    mov ax, bx
+    shr ax, 1 
+    add si, ax
+
+    ; now we want DI to point to the top left position in the video
+    call MULTIPLYx320
+    add di, bx
+
+    ; move SI to BS (and shift at the beginning)
+    mov bx, si
+    add bx, 320*200 + 200
+        
+    mov ax, [SCREEN_PTR+2]
+    mov ds, ax
+    call DISPLAY_METATILE_FAST
+
+    pop di
+    pop bx
+    call DISPLAY_SPRITE_FAST
+    ;call COPY_VIDEOBUFFER_SEMIFAST
+    call COPY_VIDEOBUFFER_SUPRATILE
+    pop ds    
+ENDM
+
+
+UPDATE_PREVIOUS_POS MACRO
+    mov bx, [CHAR_POS_X]
+    mov [PREVIOUS_POS_X], bx
+
+    mov bx, [CHAR_POS_Y]
+    mov [PREVIOUS_POS_Y], bx
+ENDM
+
+
+.CODE
 ; ** Include files here
 INCLUDE setup.asm
 INCLUDE intro.asm
@@ -85,6 +157,9 @@ MAIN PROC
     ; let's read the ROOM.DAT file to update player+position+achievements
     call USE_ROOM_FILE
     call INTRO
+
+    ; update PREVIOUS_POS_X and PREVIOUS_POS_Y
+    UPDATE_PREVIOUS_POS
 
     ; set DF to 0 by default
     cld
@@ -175,53 +250,47 @@ MAIN PROC
     mov [NEXT_ROOM], al
 
     @@new_room:
-    ; update room number
-    mov al, [NEXT_ROOM]
-    mov [ROOM_NUMBER], al
-    call UPLOAD_CURRENT_ROOM
+        ; update room number
+        mov al, [NEXT_ROOM]
+        mov [ROOM_NUMBER], al
+        call UPLOAD_CURRENT_ROOM
 
-    ; Store room data in the video buffer (past 64000 first bytes)
-    call STORE_ROOM_VIDEO_RAM
-    call SET_ROOM_CLUE
+        ; Store room data in the video buffer (past 64000 first bytes)
+        call STORE_ROOM_VIDEO_RAM
+        call SET_ROOM_CLUE
 
-    ; Generate clue area and screen
-    mov ax, [SCREEN_PTR+2]
-    call GENERATE_CLUEAREA
-    call GENERATE_PASSWORDAREA
-    
-    ; generate tileset and sprite
-    mov bx, [CHAR_POS_Y]
-    mov di, [CHAR_POS_X]
-    call MULTIPLYx320
-    add di, bx
+        ; Generate clue area and screen
+        mov ax, [SCREEN_PTR+2]
+        call GENERATE_CLUEAREA
+        call GENERATE_PASSWORDAREA
+        
+        ; generate tileset and sprite
+        mov bx, [CHAR_POS_Y]
+        mov di, [CHAR_POS_X]
+        call MULTIPLYx320
+        add di, bx
 
-    xor bh, bh
-    mov bl, [CHARSTYLE]
+        xor bh, bh
+        mov bl, [CHARSTYLE]
 
-    push ds
-    mov ds, ax
-    call DISPLAY_SPRITE_FAST
-    call DISPLAY_TILESCREEN_FAST
-    call COPY_VIDEOBUFFER
-    pop ds
+        REDRAW_ALL_SCREEN
 
-    ; reset palette - not really sure why I need to save es here
-    ; but it crashes if I don't ...
-    push es
-    mov di, offset COLORMAPS
-    mov si, offset COLORMAPS_BCKUP
-    push ds
-    pop es
-    mov cx, 3 * 128 * MAX_LBM_FILES
-    rep movsw
-    pop es
+        ; reset palette - not really sure why I need to save ES here
+        ; but it crashes if I don't ...
+        push es
+        mov di, offset COLORMAPS
+        mov si, offset COLORMAPS_BCKUP
+        push ds
+        pop es
+        mov cx, 3 * 128 * MAX_LBM_FILES
+        rep movsw
+        pop es
 
-    mov word ptr [FADEWAITITR], 4
-    mov ax, 1
-    call FADEIN
+        mov word ptr [FADEWAITITR], 4 - 2 * USE_MUSIC
+        mov ax, 1
+        call FADEIN
 
     @@wait_for_key_tile:
-
         ; color cycle if room is completed
         mov al, [ROOM_FLAGS]
         and al, 10b
@@ -242,13 +311,17 @@ MAIN PROC
         mov bl, [CHARSTYLE]
 
         ; refresh screen and display sprite
-        push ds
-        mov ax, [SCREEN_PTR+2]
-        mov ds, ax
-        call DISPLAY_TILESCREEN_FAST
-        call DISPLAY_SPRITE_FAST
-        call COPY_VIDEOBUFFER
-        pop ds
+        mov al, [CHANGE_IN_ROOM]
+        or al, al
+        jz @@partial_drawing
+            REDRAW_ALL_SCREEN
+            jmp @@done_with_drawing
+        @@partial_drawing:
+            REDRAW_PARTIAL
+        @@done_with_drawing:
+
+        ; reset the rawing flag
+        mov byte ptr [CHANGE_IN_ROOM], 0
 
         ; check keyboard
         call READ_KEY_NOWAIT
@@ -265,6 +338,8 @@ MAIN PROC
         cmp al, RESET_KEY
         jz @@reset_room
 
+        ; save current pos and move character
+        UPDATE_PREVIOUS_POS
         call UPDATE_CHARACTER_STANCE_DIRECTION
 
         ; check if we changed room
@@ -284,9 +359,9 @@ MAIN PROC
         mov [ADJUST_POS_Y], ax
 
         call SAVE_CURRENT_ROOM
-        mov word ptr [FADEWAITITR], 4
+        mov word ptr [FADEWAITITR], 4 - 2 * USE_MUSIC
         mov ax, 1
-        call FADEOUT        
+        call FADEOUT
         jmp @@new_room
     
     @@reset_room:
@@ -295,6 +370,9 @@ MAIN PROC
         mov ah, al
         and ah, 1b
         jz @@still_sameroom
+
+        ; reset the rawing flag
+        mov byte ptr [CHANGE_IN_ROOM], 1
 
         push ds
         pop es
@@ -311,7 +389,7 @@ MAIN PROC
         jmp @@wait_for_key_tile
 
 @@exit_game_loop:
-    mov word ptr [FADEWAITITR], 4
+    mov word ptr [FADEWAITITR], 4 - 2 * USE_MUSIC
     mov ax, 1
     call FADEOUT
 
@@ -397,7 +475,7 @@ LOADING_SCREEN:
         jz @@wait_for_key
     
     ; and fadeout - but let's have a faster one
-    mov word ptr [FADEWAITITR], 2
+    mov word ptr [FADEWAITITR], 2 - USE_MUSIC
     xor ax, ax
     call FADEOUT
     ret
@@ -465,7 +543,7 @@ CHECK_REACH_END:
 	ja @@not_at_end
 
     mov byte ptr [IS_WINNER], 1
-    mov word ptr [FADEWAITITR], 7
+    mov word ptr [FADEWAITITR], 7 - 2 * USE_MUSIC
     mov ax, 1
     call FADETOWHITE
     jmp END_GAME

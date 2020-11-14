@@ -128,9 +128,9 @@ SPRITE_PIXEL MACRO
     or al, al               ; 2
     jz short @@skip_pixel   ; 11 if jump but 3 if no jump  --> 7 in average ?
     mov es:[di], al         ; 2 if printed - 0 otherwise   --> 1 in average ?
-@@skip_pixel:               ; 19 in total for a pixel (worst) - 14 in average
-    inc bx
-    inc di
+    @@skip_pixel:               ; 19 in total for a pixel (worst) - 14 in average
+        inc bx
+        inc di
 ENDM
 
 
@@ -150,9 +150,9 @@ SPRITE_PIXEL_MASK MACRO
     or al, dl         ; 2  - apply then the sprite
 
     mov es:[di], al  ; 2
-@@skip_pixel:       ; 25 in total for a pixel
-    inc bx
-    inc di
+    @@skip_pixel:       ; 25 in total for a pixel
+        inc bx
+        inc di
 ENDM
 
 
@@ -168,9 +168,9 @@ SPRITE_PIXEL_MASK_STORED MACRO
     or al, dl         ; 2  - apply then the sprite
 
     mov es:[di], al  ; 2
-@@skip_pixel:       ; 18 in total for a pixel
-    inc bx
-    inc di
+    @@skip_pixel:       ; 18 in total for a pixel
+        inc bx
+        inc di
 ENDM
 
 
@@ -281,10 +281,9 @@ ALLOCATE_IMG_PTR:
 
    
 COPY_VIDEOBUFFER:
-    ; copy the contents of the video buffer over to the video memory
+    ; Copy the contents of the video buffer over to the video memory
     push ax
     push cx
-    push dx
     push si
     push di
     push es
@@ -300,28 +299,25 @@ COPY_VIDEOBUFFER:
     mov ds, ax
     xor si, si
     
-    ;cli
     DETECT_VSYNC
     mov cx, 320 * 100
     rep movsw
-    ;sti
     
     pop ds
     
     pop es
     pop di
     pop si
-    pop dx
     pop cx
     pop ax
     ret
 
 
-COPY_VIDEOBUFFER_PARTIAL:
-    ; copy the contents of the video buffer over to the video memory
+COPY_VIDEOBUFFER_SEMIFAST:
+    ; Copy the contents of 3 rows of tile to video buffer
+    ; DI indicates the current position of the sprite and will draw around it
     push ax
     push cx
-    push dx
     push si
     push di
     push es
@@ -335,20 +331,180 @@ COPY_VIDEOBUFFER_PARTIAL:
     mov ax, [VIDEO_BUFFER]
     mov ds, ax
     
-    ;cli
-    DETECT_VSYNC
-    mov di, 64 * 320
+    ; we start from DI - subtract the potential move left and up by CHARACTER_STEP pixels
+    ;sub di, 16 + 16 * 320
+    sub di, CHARACTER_STEP + CHARACTER_STEP * 320
     mov si, di
-    mov cx, 320 * 16 / 2
+
+    DETECT_VSYNC
+    mov cx, (16 * 2 + 2 * CHARACTER_STEP) * 320 / 2
     rep movsw
-    ;sti
-    
+
     pop ds
-    
     pop es
     pop di
     pop si
-    pop dx
+    pop cx
+    pop ax
+    ret
+
+
+COPY_VIDEOBUFFER_SUPRATILE:
+    ; Copy the contents of 2x2 tiles to the video buffer
+    ; DI indicates the current position of the sprite and will draw around it
+    push ax
+    push cx
+    push si
+    push di
+    push es
+
+    mov ax, VGA_RAM_LOCATION
+    mov es, ax
+    
+    push ds
+    mov ax, @DATA
+    mov ds, ax
+    mov ax, [VIDEO_BUFFER]
+    mov ds, ax
+    
+    ; we start from BX - subtract the potential move left and up by 16 pixels
+    sub di, CHARACTER_STEP + CHARACTER_STEP * 320
+    mov si, di
+
+    DETECT_VSYNC
+    ; to go fast we avoid loop - we simply repeat the same instructions (32 times...)
+    @@repeat_rows_copy_buffer:
+        mov cx, 16
+        rep movsw           ; row 1
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 2
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 3
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 4
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 5
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 6
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 7
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 8
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 9
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 10
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 11
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 12
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 13
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 14
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 15
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 16
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 17
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 18
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 19
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 20
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 21
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 22
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 23
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 24
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 25
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 26
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 27
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 28
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 29
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 30
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 31
+        add si, 320 - 32
+        mov di, si
+        mov cx, 16
+        rep movsw           ; row 32
+
+    pop ds  
+    pop es
+    pop di
+    pop si
     pop cx
     pop ax
     ret
@@ -847,8 +1003,9 @@ DISPLAY_METATILE_FAST:
 DISPLAY_SPRITE:
     ; DS points to the tiles graphics segment
     ; ES points to the buffer segment
+    ; DI points to the position on screen
     ; BX is the sprite number (0xABh --> A in hex is the row and B in hex is the coloumn)
-    ;pusha
+
     push ax
     push bx
     push cx
@@ -878,7 +1035,6 @@ DISPLAY_SPRITE:
         dec ch
         jnz @@plot_sprite_rows
     
-    ;popa
     pop di
     pop cx
     pop bx

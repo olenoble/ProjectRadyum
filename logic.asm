@@ -19,6 +19,14 @@ ADJUST_POS_Y        dw 0
                     ; If 1 - the newly added password in ADD_NEW_PASSWORD are displayed immmediately
 DISPLAY_PASSWORD    db 1
 
+                    ; if there was a change in room (i.e. room was just resolved), we want to redraw everything
+                    ; in this case set this to 1 - otherwise only a partial redrawing will be enough
+CHANGE_IN_ROOM      db 0
+
+                    ; previous position (prior move - to use to clean up sprite)
+PREVIOUS_POS_X      dw 0
+PREVIOUS_POS_Y      dw 0
+
                     ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     ; Current room details
 ROOM_NUMBER         db 0
@@ -482,10 +490,6 @@ UPDATE_CHARACTER_STANCE_DIRECTION:
     push ax
     push si
 
-    ;mov si, [CHARACTER_MOVE]
-    ;inc si
-    ;mov [CHARACTER_MOVE], si
-
     xor ah, ah
     mov si, offset JUMP_POS
     shl ax, 1
@@ -575,6 +579,10 @@ VALIDATE_ROOM:
     or al, 10b
     and al, 11111110b
     mov [ROOM_FLAGS], al
+
+    ; confirm that there is a change that requires to redraw everything
+    mov byte ptr [CHANGE_IN_ROOM], 1
+
 
     ; Now that we know the room is solved, we need to check each door
     ; we check each side independently (we can ignore each corner)
@@ -1183,6 +1191,10 @@ CHECK_CALL_FOR_PASSWORD:
         ; reinstate INT9
         call INT9_SETUP
     @@no_pass_required:
+
+        ; confirm that there is a change that requires to redraw everything
+        mov byte ptr [CHANGE_IN_ROOM], 1
+
         pop cx
         pop bx
         pop ax

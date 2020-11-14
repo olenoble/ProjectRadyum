@@ -1,6 +1,6 @@
 ; ********************************************************************************************
 ; ********************************************************************************************
-; ** Simple script to generate the room files 
+; ** Simple script to generate the room files (standalone - does not run with radyum)
 
 
 .MODEL SMALL
