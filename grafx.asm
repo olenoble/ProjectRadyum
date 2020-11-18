@@ -314,7 +314,7 @@ COPY_VIDEOBUFFER:
 
 
 COPY_VIDEOBUFFER_SEMIFAST:
-    ; Copy the contents of 3 rows of tile to video buffer
+    ; Copy the contents of 2 rows of tile to video buffer
     ; DI indicates the current position of the sprite and will draw around it
     push ax
     push cx
@@ -350,7 +350,7 @@ COPY_VIDEOBUFFER_SEMIFAST:
 
 
 COPY_VIDEOBUFFER_SUPRATILE:
-    ; Copy the contents of 2x2 tiles to the video buffer
+    ; Copy the contents of 3x3 tiles to the video buffer
     ; DI indicates the current position of the sprite and will draw around it
     push ax
     push cx
@@ -368,138 +368,203 @@ COPY_VIDEOBUFFER_SUPRATILE:
     mov ds, ax
     
     ; we start from BX - subtract the potential move left and up by 16 pixels
-    sub di, CHARACTER_STEP + CHARACTER_STEP * 320
+    ;sub di, CHARACTER_STEP + CHARACTER_STEP * 320
+    sub di, 16 + 16 * 320
     mov si, di
 
     DETECT_VSYNC
     ; to go fast we avoid loop - we simply repeat the same instructions (32 times...)
     @@repeat_rows_copy_buffer:
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 1
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 2
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 3
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 4
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 5
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 6
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 7
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 8
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 9
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 10
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 11
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 12
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 13
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 14
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 15
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 16
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 17
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 18
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 19
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 20
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 21
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 22
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 23
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 24
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 25
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 26
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 27
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 28
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 29
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 30
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 31
-        add si, 320 - 32
+        add si, 320 - 48
         mov di, si
-        mov cx, 16
+        mov cx, 24
         rep movsw           ; row 32
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 33
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 34
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 35
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 36
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 37
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 38
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 39
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 40
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 41
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 42
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 43
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 44
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 45
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 46
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 47
+        add si, 320 - 48
+        mov di, si
+        mov cx, 24
+        rep movsw           ; row 48
 
     pop ds  
     pop es
