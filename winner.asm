@@ -24,9 +24,9 @@ WINNING_MSG     db "Felicitations - Vous avez atteint la sortie de mon escape ga
                 db 020h, 0dbh, 0dch, 0dch, 0dch, 0dch, 0dch, 0dbh, 020h, 0dbh, 0dbh, 0dch, 020h, 0dbh, 0dfh, 0dch, 0dbh, 0dfh, 0dch, 0dfh, 0dbh, 0dfh, 0dfh, 0dfh, 0dbh, 0dch, 0dch, 020h, 0dfh, 020h, 0dfh, 0dfh, 0dch, 020h, 13, 10
                 db 13, 10, 13, 10, "$"
 WINNING_CODE    db "Votre code pour obtenir votre recompense est ", "$"
-PLAYER1_CODE    db "Anthony4Ever!", 13, 10, "$"
-PLAYER2_CODE    db "DematBreizh29", 13, 10, "$"
-PLAYER3_CODE    db "6502vZ80v8086", 13, 10, "$"
+PLAYER1_CODE    db "**!", 13, 10, "$"
+PLAYER2_CODE    db "***", 13, 10, "$"
+PLAYER3_CODE    db "***", 13, 10, "$"
 CODE_END_RC     db 13, 10, "$"
 
 .CODE
